@@ -1,0 +1,10 @@
+{
+  "name": "Homies Proshop Assistant",
+  "short_name": "Homies Ops",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#101110",
+  "theme_color": "#d9322b",
+  "description": "Internal operations control room for Homies Proshop.",
+  "icons": [{ "src": "/homies-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
