@@ -7,13 +7,15 @@ import {
   Search, Settings, ShoppingBag, SlidersHorizontal, Sparkles, Tag, TrendingUp, TriangleAlert, X
 } from 'lucide-react';
 import './styles.css';
+import { liveProducts, liveSales } from './data/live-data';
+import { LiveOverview } from './LiveOverview';
 
 type Status = 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Slow Moving';
-type Product = { sku:string; name:string; brand:string; category:string; size:string; color:string; qty:number; cost:number; price:number; sold:number; received:string; supplier:string; image:string; };
+type Product = { sku:string; name:string; brand:string; category:string; size:string; color:string; qty:number; cost:number; price:number; sold:number; received:string; supplier:string; image:string; sourceStatus?:string; };
 type Sale = { id:string; date:string; product:string; sku:string; qty:number; price:number; discount:number; category:string; brand:string; };
 type Note = { id:number; text:string; date:string; pinned:boolean; archived:boolean; };
 
-const products: Product[] = [
+const demoProducts: Product[] = [
   {sku:'RON-ONE-24-10',name:'One Boot',brand:'Ronix',category:'Bindings',size:'10',color:'Black / White',qty:4,cost:18500,price:28900,sold:12,received:'2026-04-12',supplier:'Ronix PH',image:'boot'},
   {sku:'LIQ-EDGE-26-138',name:'Edge 138',brand:'Liquid Force',category:'Wakeboards',size:'138',color:'Raw / Red',qty:2,cost:26400,price:39900,sold:8,received:'2026-03-20',supplier:'LF Asia',image:'board'},
   {sku:'T8-DUNE-M',name:'Dune MIPS',brand:'Triple 8',category:'Helmets',size:'M',color:'Matte Black',qty:11,cost:2200,price:3990,sold:19,received:'2026-05-03',supplier:'Triple 8 PH',image:'helmet'},
@@ -25,7 +27,7 @@ const products: Product[] = [
   {sku:'RON-PARK-26-139',name:'Parks Modello',brand:'Ronix',category:'Wakeboards',size:'139',color:'Red / Black',qty:5,cost:24500,price:37900,sold:10,received:'2026-04-18',supplier:'Ronix PH',image:'board'},
   {sku:'HM-LSH-CORE-L',name:'Core Boardshort',brand:'Homies',category:'Apparel',size:'L',color:'Charcoal',qty:8,cost:900,price:2200,sold:23,received:'2026-05-10',supplier:'Homies Studio',image:'shorts'}
 ];
-const sales: Sale[] = [
+const demoSales: Sale[] = [
   {id:'HM-260824-041',date:'2026-08-24',product:'Core Tee',sku:'HM-TEE-CORE-BLK',qty:2,price:1200,discount:0,category:'Apparel',brand:'Homies'},
   {id:'HM-260824-039',date:'2026-08-24',product:'Dune MIPS',sku:'T8-DUNE-M',qty:1,price:3990,discount:400,category:'Helmets',brand:'Triple 8'},
   {id:'HM-260823-037',date:'2026-08-23',product:'One Boot',sku:'RON-ONE-24-10',qty:1,price:28900,discount:0,category:'Bindings',brand:'Ronix'},
@@ -33,14 +35,22 @@ const sales: Sale[] = [
   {id:'HM-260822-030',date:'2026-08-22',product:'Core Boardshort',sku:'HM-LSH-CORE-L',qty:2,price:2200,discount:0,category:'Apparel',brand:'Homies'},
   {id:'HM-260821-028',date:'2026-08-21',product:'Brainsaver L',sku:'T8-BRZ-L',qty:1,price:3490,discount:0,category:'Helmets',brand:'Triple 8'}
 ];
+const products: Product[] = liveProducts as Product[];
+const sales: Sale[] = liveSales as Sale[];
 const initialNotes: Note[] = [
   {id:1,text:'Hold Ronix One bindings size 10 for Carlo until Friday.',date:'Today · 09:12',pinned:true,archived:false},
   {id:2,text:'Check Triple 8 replenishment before the weekend event.',date:'Yesterday · 16:40',pinned:true,archived:false},
   {id:3,text:'Supplier price sheet received from Ronix PH.',date:'Aug 19 · 11:25',pinned:false,archived:false}
 ];
-const php = (n:number) => `₱${Math.round(n).toLocaleString('en-PH')}`;
-const statusFor = (p:Product):Status => p.qty === 0 ? 'Out of Stock' : p.qty <= 2 ? 'Low Stock' : p.sold < 5 ? 'Slow Moving' : 'In Stock';
-const marginFor = (p:Product) => p.price - p.cost;
+const php = (n:number|null) => !n ? '—' : `₱${Math.round(n).toLocaleString('en-PH')}`;
+const statusFor = (p:Product):Status => { const source=(p.sourceStatus||'').toLowerCase(); if(source.includes('out of stock')) return 'Out of Stock'; if(source.includes('restock')||source.includes('low stock')) return 'Low Stock'; if(source.includes('slow')) return 'Slow Moving'; return p.qty === 0 ? 'Out of Stock' : p.qty <= 2 ? 'Low Stock' : p.sold < 5 ? 'Slow Moving' : 'In Stock'; };
+const marginFor = (p:Product) => p.cost ? p.price - p.cost : null;
+const currentMonthSales = sales.filter(s => s.date.startsWith('2026-08'));
+const monthRevenue = currentMonthSales.reduce((sum, s) => sum + (s.qty * s.price) - s.discount, 0);
+const monthUnits = currentMonthSales.reduce((sum, s) => sum + s.qty, 0);
+const inventoryValue = products.reduce((sum, p) => sum + (p.qty * p.price), 0);
+const activeSkus = products.filter(p => p.qty > 0).length;
+const lowStockSkus = products.filter(p => statusFor(p) === 'Low Stock' || statusFor(p) === 'Out of Stock').length;
 
 const nav = [
   ['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', BarChart3],
@@ -87,7 +97,7 @@ function Notes() { const [notes,setNotes]=useState(initialNotes); const [draft,s
 function SettingsPage({section='settings'}:{section?:string}) { const [modules,setModules]=useState(()=>localStorage.getItem('homies-dashboard-modules')!=='off'); const settingNav: Array<[string, typeof LayoutDashboard]> = [['Dashboard',LayoutDashboard],['Inventory display',Boxes],['Data source',Database],['Permissions',Tag],['Appearance',Sparkles],['Notifications',Bell],['Backup & export',Download],['About',CircleHelp]]; return <div className="content"><PageHead eyebrow="Workspace configuration" title="Settings" copy="Keep the control room aligned with how you run the shop."/><div className="settings-layout"><aside className="settings-nav">{settingNav.map(([label,Icon])=><button className={section===String(label).toLowerCase().replace(' ','-')||section==='settings'&&label==='Dashboard'?'active':''} key={String(label)}><Icon size={16}/>{label}</button>)}</aside><section className="settings-panel"><div className="panel-heading"><div className="eyebrow">Dashboard</div><h2>Dashboard modules</h2><p>Choose what appears on your home command center. Preferences are saved on this device.</p></div><div className="setting-list">{['KPI summary','Sales trend','SKU movement','Best sellers','Slow movers','Sales by category','Recent sales','Daily sales summary','Pinned notes'].map((label,i)=><div className="setting-row" key={label}><div><strong>{label}</strong><span>{i<2?'Core performance view':'Operational module'}</span></div><button className={`switch ${modules||i>1?'on':''}`} onClick={()=>{setModules(!modules);localStorage.setItem('homies-dashboard-modules',modules?'off':'on')}}><i/></button></div>)}</div><div className="panel-heading second"><div className="eyebrow">Data source</div><h2>Google Sheets connection</h2><p>The current source stays explicit, replaceable, and visible.</p></div><div className="source-card"><div className="source-icon"><Database size={18}/></div><div><strong>HOMIES MONITORING</strong><span>Google Sheets · Connected</span></div><span className="status status-in-stock"><i/>Healthy</span><Button icon={<RefreshCw size={15}/>}>Sync now</Button></div></section></div></div>; }
 function DataProblems(){return <div className="content"><PageHead eyebrow="Data quality" title="Data problems" copy="Nothing important gets silently hidden. Resolve issues at the source." action={<Button icon={<Download size={15}/>}>Export issues</Button>}/><div className="issue-summary"><div><span>Open issues</span><strong>4</strong></div><div><span>Critical</span><strong className="negative-text">1</strong></div><div><span>Warnings</span><strong className="amber-text">3</strong></div><div><span>Last scan</span><strong>4 min ago</strong></div></div><div className="issue-toolbar"><div className="segmented"><button className="active">All <b>4</b></button><button>Critical <b>1</b></button><button>Warning <b>3</b></button></div><Button icon={<Filter size={15}/>}>Filter</Button></div><div className="issue-list">{[['Duplicate SKU','RON-ONE-24-10 appears twice in source sheet','Inventory','Critical','HOMIES MONITORING'],['Missing selling price','3 items have no selling price','Inventory','Warning','HOMIES MONITORING'],['Invalid quantity','SKU HM-TEE-CORE-BLK has a negative adjustment','Movement','Warning','HOMIES MONITORING'],['Stale data','Last successful source sync is older than 24 hours','Sync','Warning','Google Sheets']].map((x,i)=><article key={String(x[0])}><div className={`issue-icon ${i===0?'critical':''}`}>{i===0?<TriangleAlert size={18}/>:<AlertTriangle size={18}/>}</div><div className="issue-copy"><strong>{x[0]}</strong><p>{x[1]}</p><span>{x[2]} · {x[4]}</span></div><span className={`severity ${String(x[3]).toLowerCase()}`}>{x[3]}</span><Button variant="ghost">Review <span>→</span></Button></article>)}</div></div>}
 
-function App(){const [path,setPath]=useState(routeKey()); useEffect(()=>{const on=()=>setPath(routeKey());window.addEventListener('popstate',on);return()=>window.removeEventListener('popstate',on)},[]); const assistant=()=>navigate('/assistant'); let page:ReactNode; if(path==='/')page=<Overview onAssistant={assistant}/>; else if(path==='/inventory')page=<Inventory onAssistant={assistant}/>; else if(path.startsWith('/inventory/'))page=<Detail sku={path.split('/')[2]}/>; else if(path==='/sales')page=<Sales/>; else if(path.startsWith('/sales/'))page=<Transaction id={path.split('/')[2]}/>; else if(path==='/assistant')page=<Assistant/>; else if(path==='/notes')page=<Notes/>; else if(path==='/data-problems')page=<DataProblems/>; else page=<SettingsPage section={path.split('/')[2]||'settings'}/>; return <Shell path={path} onAssistant={assistant}>{page}</Shell>}
+function App(){const [path,setPath]=useState(routeKey()); useEffect(()=>{const on=()=>setPath(routeKey());window.addEventListener('popstate',on);return()=>window.removeEventListener('popstate',on)},[]); const assistant=()=>navigate('/assistant'); let page:ReactNode; if(path==='/')page=<LiveOverview onAssistant={assistant}/>; else if(path==='/inventory')page=<Inventory onAssistant={assistant}/>; else if(path.startsWith('/inventory/'))page=<Detail sku={path.split('/')[2]}/>; else if(path==='/sales')page=<Sales/>; else if(path.startsWith('/sales/'))page=<Transaction id={path.split('/')[2]}/>; else if(path==='/assistant')page=<Assistant/>; else if(path==='/notes')page=<Notes/>; else if(path==='/data-problems')page=<DataProblems/>; else page=<SettingsPage section={path.split('/')[2]||'settings'}/>; return <Shell path={path} onAssistant={assistant}>{page}</Shell>}
 
 if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
 createRoot(document.getElementById('root')!).render(<StrictMode><App/></StrictMode>);
