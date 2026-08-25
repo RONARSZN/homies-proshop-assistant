@@ -12,7 +12,7 @@ export const statusFor = (product: Product): Status => {
   return product.qty === 0 ? 'Out of Stock' : product.qty <= 2 ? 'Low Stock' : product.sold < 5 ? 'Slow Moving' : 'In Stock';
 };
 export const marginFor = (product: Product) => product.cost === null || product.cost === 0 || product.price === null ? null : product.price - product.cost;
-export const saleTotal = (sale: Sale) => sale.price === null ? null : sale.qty * sale.price - (sale.discount || 0);
+export const saleTotal = (sale: Sale) => sale.total;
 export const latestSaleDate = (sales: Sale[]) => sales.reduce<string | null>((latest, sale) => !latest || sale.date > latest ? sale.date : latest, null);
 export const reportingPeriod = (sales: Sale[]) => {
   const latest = latestSaleDate(sales);

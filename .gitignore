@@ -1,4 +1,7 @@
 node_modules
+.env.local
+.playwright-cli/
+output/playwright/
 scripts/migration-source.json
 dist
 *.tsbuildinfo

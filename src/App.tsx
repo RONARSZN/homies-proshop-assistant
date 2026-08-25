@@ -1,0 +1,194 @@
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
+import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.mjs';
+import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
+import Database from 'lucide-react/dist/esm/icons/database.mjs';
+import LayoutDashboard from 'lucide-react/dist/esm/icons/layout-dashboard.mjs';
+import LogOut from 'lucide-react/dist/esm/icons/log-out.mjs';
+import Menu from 'lucide-react/dist/esm/icons/menu.mjs';
+import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal.mjs';
+import Package from 'lucide-react/dist/esm/icons/package.mjs';
+import Pin from 'lucide-react/dist/esm/icons/pin.mjs';
+import Printer from 'lucide-react/dist/esm/icons/printer.mjs';
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.mjs';
+import Search from 'lucide-react/dist/esm/icons/search.mjs';
+import Settings from 'lucide-react/dist/esm/icons/settings.mjs';
+import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.mjs';
+import Tag from 'lucide-react/dist/esm/icons/tag.mjs';
+import { AuthProvider, useAuth } from './AuthProvider';
+import { DataProblems } from './DataProblems';
+import { LiveOverview } from './LiveOverview';
+import { activeSkuCount, attentionCount, formatPeso, inventoryValue, marginFor, reportingPeriod, saleTotal, statusFor, type Status } from './domain';
+import { shopRepository } from './repository';
+import { ShopDataProvider, useShopData } from './useShopData';
+import type { CartLine, Category, Note, Product, StockMovement } from './types';
+
+const nav = [['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', Tag], ['/pos', 'POS', ShoppingCart], ['/notes', 'Notes', ClipboardList]] as const;
+const navigate = (path: string) => { window.history.pushState({}, '', path); window.dispatchEvent(new PopStateEvent('popstate')); };
+const routeKey = () => window.location.pathname.replace(/\/$/, '') || '/';
+
+function SignIn() {
+  const { signIn, loading, error } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const submit = (event: FormEvent) => { event.preventDefault(); void signIn(email.trim(), password); };
+  return <main className="sign-in-page"><form className="sign-in-card" onSubmit={submit}><div className="brand"><div className="brand-mark">H</div><div><strong>#HOMIES</strong><span>PRO SHOP / OPS</span></div></div><div className="eyebrow">Authorized team access</div><h1>Sign in</h1><p>Inventory, sales, and stock changes are protected by your shop role.</p><label>Email<input type="email" autoComplete="username" value={email} onChange={event => setEmail(event.target.value)} required /></label><label>Password<input type="password" autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)} required /></label>{error && <div className="form-error" role="alert">{error}</div>}<button className="button button-primary" disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button></form></main>;
+}
+
+function AuthenticatedApp() {
+  const { session, profile, loading } = useAuth();
+  if (loading) return <main className="sign-in-page"><div className="loading-state"><div className="eyebrow">Homies Proshop Assistant</div><h1>Checking your session…</h1></div></main>;
+  if (!session || !profile) return <SignIn />;
+  return <ShopDataProvider><Router /></ShopDataProvider>;
+}
+
+export function App() {
+  return <AuthProvider><AuthenticatedApp /></AuthProvider>;
+}
+
+function Router() {
+  const [path, setPath] = useState(routeKey());
+  useEffect(() => { const onPopState = () => setPath(routeKey()); window.addEventListener('popstate', onPopState); return () => window.removeEventListener('popstate', onPopState); }, []);
+  let page: ReactNode;
+  if (path === '/') page = <LiveOverview />;
+  else if (path === '/inventory') page = <Inventory />;
+  else if (path.startsWith('/inventory/')) page = <ProductDetail id={decodeURIComponent(path.slice('/inventory/'.length))} />;
+  else if (path === '/sales') page = <Sales />;
+  else if (path.startsWith('/sales/')) page = <Transaction id={decodeURIComponent(path.slice('/sales/'.length))} />;
+  else if (path === '/pos') page = <Pos />;
+  else if (path === '/data-problems') page = <DataProblems />;
+  else if (path === '/notes') page = <Notes />;
+  else if (path === '/settings') page = <SettingsPage />;
+  else page = <NotFound title="Page not found" copy="That page does not exist." back="/" />;
+  return <Shell path={path}>{page}</Shell>;
+}
+
+function Shell({ path, children }: { path: string; children: ReactNode }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { profile, signOut } = useAuth();
+  const { loading, refresh } = useShopData();
+  return <div className="app-shell"><aside className={`sidebar ${menuOpen ? 'open' : ''}`}><div className="brand"><div className="brand-mark">H</div><div><strong>#HOMIES</strong><span>PRO SHOP / OPS</span></div></div><div className="sidebar-label">Workspace</div><nav>{nav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => { navigate(href); setMenuOpen(false); }}><Icon size={17}/><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><button onClick={() => navigate('/data-problems')}><Database size={17}/><span>Data problems</span></button><button onClick={() => navigate('/settings')}><Settings size={17}/><span>Settings</span></button><div className="profile"><div className="avatar">{profile?.fullName.slice(0, 1).toUpperCase()}</div><div><strong>{profile?.fullName}</strong><span>{profile?.role}</span></div></div><button onClick={() => void signOut()}><LogOut size={17}/><span>Sign out</span></button></div></aside>{menuOpen && <button className="scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)}/>}<main className="main"><header className="topbar"><button className="mobile-menu" aria-label="Open menu" onClick={() => setMenuOpen(true)}><Menu size={20}/></button><div className="breadcrumbs"><span>Homies Proshop</span><b>/</b><strong>{path === '/' ? 'Overview' : path.split('/')[1]?.replace('-', ' ')}</strong></div><div className="top-actions"><span className="sync-dot"><i/> Live database</span><button className="refresh-button" aria-label="Refresh live data" disabled={loading} onClick={() => void refresh()}><RefreshCw size={15}/><span>{loading ? 'Refreshing' : 'Refresh'}</span></button></div></header>{children}</main><nav className="mobile-bottom">{nav.map(([href, label, Icon]) => <button key={href} className={path === href ? 'active' : ''} onClick={() => navigate(href)}><Icon size={18}/><span>{label === 'Overview' ? 'Home' : label}</span></button>)}<button onClick={() => setMenuOpen(true)}><MoreHorizontal size={18}/><span>More</span></button></nav></div>;
+}
+
+function StatusBadge({ status }: { status: Status }) {
+  return <span className={`status status-${status.toLowerCase().replaceAll(' ', '-')}`}><i/>{status}</span>;
+}
+
+function LoadingState() { return <div className="content"><div className="loading-state"><div className="eyebrow">Live operations</div><h1>Loading data…</h1></div></div>; }
+function ErrorState({ error }: { error: string }) { return <div className="content"><div className="loading-state"><div className="eyebrow">Data unavailable</div><h1>Live database unavailable.</h1><p>{error}</p></div></div>; }
+function PageHead({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy?: string; action?: ReactNode }) { return <div className="page-head"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1>{copy && <p>{copy}</p>}</div>{action}</div>; }
+function Card({ title, meta, children, wide = false }: { title: string; meta?: string; children: ReactNode; wide?: boolean }) { return <section className={`card ${wide ? 'wide' : ''}`}><div className="card-head"><div><h2>{title}</h2>{meta && <span>{meta}</span>}</div></div>{children}</section>; }
+
+function ProductRows({ products }: { products: Product[] }) {
+  return <div className="table-wrap"><table><thead><tr><th>Product / SKU</th><th>Size</th><th>On hand</th><th>Price</th><th>Margin</th><th>Sold</th><th>Status</th></tr></thead><tbody>{products.map(product => <tr key={product.id}><td><button className="table-product-link" onClick={() => navigate(`/inventory/${product.id}`)}><span className="product-icon neutral" aria-hidden="true">?</span><span><strong>{product.name}</strong><small>{product.brand} · {product.sku}</small></span></button></td><td>{product.size}</td><td><strong>{product.qty}</strong></td><td>{formatPeso(product.price)}</td><td>{formatPeso(marginFor(product))}</td><td>{product.sold}</td><td><StatusBadge status={statusFor(product)}/></td></tr>)}</tbody></table></div>;
+}
+
+function Inventory() {
+  const { products, categories, loading, error } = useShopData();
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All categories');
+  if (loading) return <LoadingState/>;
+  if (error) return <ErrorState error={error}/>;
+  const filtered = products.filter(product => `${product.name} ${product.sku} ${product.brand}`.toLowerCase().includes(query.toLowerCase()) && (category === 'All categories' || product.category === category));
+  const grouped = categories.map(item => ({ category: item, products: filtered.filter(product => product.categoryId === item.id) })).filter(group => group.products.length);
+  const uncategorised = filtered.filter(product => !categories.some(item => item.id === product.categoryId));
+  return <div className="content"><PageHead eyebrow="Operations · Inventory" title="Inventory control" copy={`${products.length} products · ${activeSkuCount(products)} with stock on hand.`}/><div className="inventory-summary"><div><span>Retail inventory value</span><strong>{formatPeso(inventoryValue(products))}</strong></div><div><span>Items on hand</span><strong>{products.reduce((sum, product) => sum + product.qty, 0)}</strong></div><div className="warn"><span>Need attention</span><strong>{attentionCount(products)}</strong></div><div><span>Categories</span><strong>{categories.length}</strong></div></div><div className="toolbar"><div className="search"><Search size={17}/><label className="sr-only" htmlFor="inventory-search">Search inventory</label><input id="inventory-search" placeholder="Search product, SKU, or brand…" value={query} onChange={event => setQuery(event.target.value)}/></div><label className="sr-only" htmlFor="inventory-category">Filter by category</label><select id="inventory-category" value={category} onChange={event => setCategory(event.target.value)}><option>All categories</option>{categories.map(item => <option key={item.id}>{item.name}</option>)}</select></div>{filtered.length === 0 ? <div className="empty-state"><Package size={24}/><strong>No inventory matches.</strong></div> : query ? <ProductRows products={filtered}/> : <div className="category-groups">{grouped.map(group => <details key={group.category.id} open><summary><span><strong>{group.category.name}</strong><small>{group.products.length} products</small></span><span>{group.products.reduce((sum, product) => sum + product.qty, 0)} on hand · {formatPeso(inventoryValue(group.products))}</span><ChevronDown size={16}/></summary><ProductRows products={group.products}/></details>)}{uncategorised.length > 0 && <details open><summary><span><strong>Uncategorised</strong><small>{uncategorised.length} products</small></span><span>{uncategorised.reduce((sum, product) => sum + product.qty, 0)} on hand</span><ChevronDown size={16}/></summary><ProductRows products={uncategorised}/></details>}</div>}<div className="table-footer"><span>Showing {filtered.length} of {products.length} products</span></div></div>;
+}
+
+function ProductDetail({ id }: { id: string }) {
+  const { products, categories, loading, error, refresh } = useShopData();
+  const { profile } = useAuth();
+  const product = products.find(item => item.id === id);
+  if (loading) return <LoadingState/>;
+  if (error) return <ErrorState error={error}/>;
+  if (!product) return <NotFound title="Product not found" copy="That product is not in the live database." back="/inventory"/>;
+  return <div className="content"><button className="back-link" onClick={() => navigate('/inventory')}>← Back to inventory</button><PageHead eyebrow="Inventory · Live product" title={product.name} copy={`${product.brand} · ${product.sku}`}/><div className="detail-grid"><Card title="Item overview" meta={product.category}><div className="item-hero"><div className="hero-product neutral">{product.category}</div><div><StatusBadge status={statusFor(product)}/><h2>{product.name}</h2><p>{product.brand} · {product.category}</p></div></div><div className="detail-fields">{[['SKU', product.sku], ['Size', product.size], ['Color', product.color], ['Supplier', product.supplier], ['Date received', product.received || '—']].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></Card><Card title="Stock & pricing" meta="PHP"><div className="big-stock"><span>Current stock</span><strong>{product.qty}</strong><StatusBadge status={statusFor(product)}/></div><div className="detail-fields two">{[['Selling price', formatPeso(product.price)], ['Unit cost', formatPeso(product.cost)], ['Unit margin', formatPeso(marginFor(product))], ['Inventory value', formatPeso(product.qty * (product.price || 0))], ['Units sold', String(product.sold)]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></Card></div><StockPanel product={product} onSaved={refresh}/>{profile && (profile.role === 'owner' || profile.role === 'manager') && <ProductEditor product={product} categories={categories} onSaved={refresh}/>}</div>;
+}
+
+function StockPanel({ product, onSaved }: { product: Product; onSaved: () => Promise<void> }) {
+  const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [reason, setReason] = useState<'receipt' | 'adjustment' | 'write_off'>('receipt');
+  const [amount, setAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [message, setMessage] = useState('');
+  const load = () => shopRepository.getMovements(product.id).then(setMovements).catch(error => setMessage(error instanceof Error ? error.message : 'Movement history unavailable.'));
+  useEffect(() => { void load(); }, [product.id]);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const raw = Number(amount);
+    if (!Number.isInteger(raw) || raw === 0) { setMessage('Enter a non-zero whole number.'); return; }
+    const delta = reason === 'write_off' ? -Math.abs(raw) : reason === 'receipt' ? Math.abs(raw) : raw;
+    try { await shopRepository.addMovement(product.id, delta, reason, note.trim() || null); setAmount(''); setNote(''); setMessage('Stock movement saved.'); await Promise.all([load(), onSaved()]); } catch (error) { setMessage(error instanceof Error ? error.message : 'Stock movement failed.'); }
+  }
+  return <Card title="Stock movements" meta="Append-only ledger" wide><form className="movement-form" onSubmit={submit}><select value={reason} onChange={event => setReason(event.target.value as typeof reason)}><option value="receipt">Receive stock</option><option value="adjustment">Count adjustment (+/-)</option><option value="write_off">Write off damage</option></select><input type="number" step="1" placeholder="Quantity" value={amount} onChange={event => setAmount(event.target.value)} required/><input placeholder="Note (optional)" value={note} onChange={event => setNote(event.target.value)}/><button className="button button-primary">Save movement</button></form>{message && <p className="form-message" role="status">{message}</p>}<div className="movement-list">{movements.map(item => <div key={item.id}><span>{new Date(item.createdAt).toLocaleString('en-PH')}</span><strong>{item.reason.replace('_', ' ')}</strong><b className={item.delta < 0 ? 'negative' : ''}>{item.delta > 0 ? '+' : ''}{item.delta}</b><small>{item.note || 'No note'}</small></div>)}</div></Card>;
+}
+
+function ProductEditor({ product, categories, onSaved }: { product: Product; categories: Category[]; onSaved: () => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [message, setMessage] = useState('');
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const number = (name: string) => { const value = String(form.get(name) || '').trim(); return value ? Number(value) : null; };
+    try { await shopRepository.updateProduct(product.id, { sku: String(form.get('sku')), name: String(form.get('name')), categoryId: String(form.get('category')), brand: String(form.get('brand')).trim() || null, size: String(form.get('size')).trim() || null, color: String(form.get('color')).trim() || null, cost: number('cost'), price: number('price'), supplier: String(form.get('supplier')).trim() || null, received: String(form.get('received')).trim() || null, isActive: form.get('active') === 'on' }); setMessage('Product updated.'); await onSaved(); } catch (error) { setMessage(error instanceof Error ? error.message : 'Product update failed.'); }
+  }
+  return <Card title="Product management" meta="Manager or owner" wide><button className="button button-dark" onClick={() => setOpen(value => !value)}>{open ? 'Close editor' : 'Edit product'}</button>{open && <form className="product-form" onSubmit={submit}><label>SKU<input name="sku" defaultValue={product.sku} required/></label><label>Name<input name="name" defaultValue={product.name} required/></label><label>Category<select name="category" defaultValue={product.categoryId}>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Brand<input name="brand" defaultValue={product.brand === '—' ? '' : product.brand}/></label><label>Size<input name="size" defaultValue={product.size === '—' ? '' : product.size}/></label><label>Colour<input name="color" defaultValue={product.color === '—' ? '' : product.color}/></label><label>Unit cost<input name="cost" type="number" min="0.01" step="0.01" defaultValue={product.cost ?? ''}/></label><label>Selling price<input name="price" type="number" min="0.01" step="0.01" defaultValue={product.price ?? ''}/></label><label>Supplier<input name="supplier" defaultValue={product.supplier === '—' ? '' : product.supplier}/></label><label>Date received<input name="received" type="date" defaultValue={product.received}/></label><label className="checkbox"><input name="active" type="checkbox" defaultChecked={product.isActive}/>Active product</label><button className="button button-primary">Save product</button></form>}{message && <p className="form-message">{message}</p>}</Card>;
+}
+
+function Sales() {
+  const { sales, loading, error } = useShopData();
+  if (loading) return <LoadingState/>;
+  if (error) return <ErrorState error={error}/>;
+  const period = reportingPeriod(sales.filter(sale => sale.status === 'completed'));
+  const revenue = period.sales.reduce((sum, sale) => sum + (saleTotal(sale) || 0), 0);
+  return <div className="content"><PageHead eyebrow={`Operations · Sales · ${period.label}`} title="Sales" copy="Completed and voided transactions from the live database." action={<button className="button button-primary" onClick={() => navigate('/pos')}><ShoppingCart size={16}/>New sale</button>}/><div className="inventory-summary"><div><span>Revenue</span><strong>{formatPeso(revenue)}</strong></div><div><span>Units sold</span><strong>{period.sales.reduce((sum, sale) => sum + sale.qty, 0)}</strong></div><div><span>Transactions</span><strong>{period.sales.length}</strong></div><div><span>All records</span><strong>{sales.length}</strong></div></div><div className="card"><div className="sales-list">{sales.map(sale => <button key={sale.id} onClick={() => navigate(`/sales/${sale.id}`)}><span className="sale-date">{sale.date}</span><span><strong>{sale.product}</strong><small>{sale.id.slice(0, 8)} · {sale.qty} unit{sale.qty === 1 ? '' : 's'} · {sale.status}</small></span><strong>{formatPeso(sale.total)}</strong><ChevronDown size={15}/></button>)}</div></div></div>;
+}
+
+function Transaction({ id }: { id: string }) {
+  const { sales, loading, error, refresh } = useShopData();
+  const { profile } = useAuth();
+  const [message, setMessage] = useState('');
+  if (loading) return <LoadingState/>;
+  if (error) return <ErrorState error={error}/>;
+  const sale = sales.find(item => item.id === id);
+  if (!sale) return <NotFound title="Transaction not found" copy="That sale does not exist." back="/sales"/>;
+  async function voidSale() { if (!confirm('Void this sale and return its stock?')) return; try { await shopRepository.voidSale(id); setMessage('Sale voided and stock returned.'); await refresh(); } catch (caught) { setMessage(caught instanceof Error ? caught.message : 'Void failed.'); } }
+  return <div className="content print-receipt"><button className="back-link no-print" onClick={() => navigate('/sales')}>← Back to sales</button><PageHead eyebrow="Sales · Transaction" title={sale.id.slice(0, 8).toUpperCase()} copy={`${sale.date} · ${sale.status}`} action={<button className="button button-dark no-print" onClick={() => window.print()}><Printer size={16}/>Print</button>}/><Card title="Receipt" meta={sale.paymentMethod || 'Payment method unavailable'}><div className="transaction-row header"><span>Product</span><span>Qty</span><span>Unit price</span><span>Total</span></div>{sale.items.map(item => <div className="transaction-row" key={item.id}><span><strong>{item.description}</strong><small>{item.sku || 'Historical unmatched item'}</small></span><span>{item.qty}</span><span>{formatPeso(item.unitPrice)}</span><strong>{formatPeso(item.lineTotal)}</strong></div>)}<div className="transaction-total"><span>Subtotal</span><strong>{formatPeso(sale.subtotal)}</strong><span>Discount</span><strong>{formatPeso(sale.discount)}</strong><span>Total</span><strong>{formatPeso(sale.total)}</strong></div></Card>{profile?.role === 'owner' && sale.status === 'completed' && !sale.isHistorical && <button className="button button-dark no-print" onClick={() => void voidSale()}>Void sale</button>}{message && <p className="form-message">{message}</p>}</div>;
+}
+
+function Pos() {
+  const { products, refresh } = useShopData();
+  const [query, setQuery] = useState('');
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [orderDiscount, setOrderDiscount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState('Cash');
+  const [message, setMessage] = useState('');
+  const matches = products.filter(product => product.isActive && product.qty > 0 && product.price !== null && `${product.name} ${product.sku}`.toLowerCase().includes(query.toLowerCase())).slice(0, 12);
+  const subtotal = cart.reduce((sum, line) => sum + line.qty * line.unitPrice - line.discount, 0);
+  const total = Math.max(0, subtotal - orderDiscount);
+  function add(product: Product) { if (product.price === null) return; setCart(current => { const found = current.find(line => line.productId === product.id); return found ? current.map(line => line.productId === product.id ? { ...line, qty: line.qty + 1 } : line) : [...current, { productId: product.id, qty: 1, unitPrice: product.price!, discount: 0 }]; }); }
+  function update(productId: string, changes: Partial<CartLine>) { setCart(current => current.map(line => line.productId === productId ? { ...line, ...changes } : line).filter(line => line.qty > 0)); }
+  async function complete() { setMessage(''); if (!cart.length) { setMessage('Add at least one product.'); return; } try { const saleId = await shopRepository.completeSale(cart, orderDiscount, paymentMethod); setCart([]); setOrderDiscount(0); await refresh(); navigate(`/sales/${saleId}`); } catch (error) { setMessage(error instanceof Error ? error.message : 'Sale failed.'); } }
+  return <div className="content"><PageHead eyebrow="Counter POS" title="Ring up a sale" copy="Availability is checked again inside the database transaction."/><div className="pos-layout"><Card title="Find products" meta={`${matches.length} matches`}><div className="search"><Search size={17}/><input aria-label="Search products" placeholder="Search product or SKU…" value={query} onChange={event => setQuery(event.target.value)}/></div><div className="pos-results">{matches.map(product => <button key={product.id} onClick={() => add(product)}><span><strong>{product.name}</strong><small>{product.sku} · {product.qty} available</small></span><b>{formatPeso(product.price)}</b></button>)}</div></Card><Card title="Current sale" meta={`${cart.length} lines`}><div className="cart-lines">{cart.map(line => { const product = products.find(item => item.id === line.productId)!; return <div key={line.productId}><span><strong>{product.name}</strong><small>{product.sku} · {product.qty} available</small></span><label>Qty<input type="number" min="0" step="1" value={line.qty} onChange={event => update(line.productId, { qty: Number(event.target.value) })}/></label><label>Line discount<input type="number" min="0" step="0.01" value={line.discount} onChange={event => update(line.productId, { discount: Number(event.target.value) })}/></label><b>{formatPeso(line.qty * line.unitPrice - line.discount)}</b></div>; })}</div>{!cart.length && <p className="empty-copy">No products added.</p>}<div className="pos-checkout"><label>Order discount<input type="number" min="0" max={subtotal} step="0.01" value={orderDiscount} onChange={event => setOrderDiscount(Number(event.target.value))}/></label><label>Payment method<select value={paymentMethod} onChange={event => setPaymentMethod(event.target.value)}><option>Cash</option><option>GCash</option><option>Card</option><option>Bank transfer</option><option>Other</option></select></label><div><span>Total</span><strong>{formatPeso(total)}</strong></div><button className="button button-primary" onClick={() => void complete()}>Complete sale</button>{message && <p className="form-error" role="alert">{message}</p>}</div></Card></div></div>;
+}
+
+const NOTE_KEY = 'homies-proshop-notes';
+const readNotes = (): Note[] => { try { const value = localStorage.getItem(NOTE_KEY); return value ? JSON.parse(value) as Note[] : []; } catch { return []; } };
+function Notes() {
+  const [notes, setNotes] = useState<Note[]>(readNotes);
+  const [draft, setDraft] = useState('');
+  const [filter, setFilter] = useState<'All' | 'Pinned'>('All');
+  useEffect(() => { localStorage.setItem(NOTE_KEY, JSON.stringify(notes)); }, [notes]);
+  const visible = notes.filter(note => filter === 'All' || note.pinned);
+  const add = () => { if (!draft.trim()) return; setNotes(current => [{ id: Date.now(), text: draft.trim(), date: new Date().toISOString().slice(0, 10), pinned: false, archived: false }, ...current]); setDraft(''); };
+  return <div className="content"><PageHead eyebrow="Operations · Device notes" title="Keep the thread." copy="Notes remain on this device and are not inventory records."/><div className="notes-layout"><div className="note-compose"><label htmlFor="note-input">New operational note</label><textarea id="note-input" value={draft} onChange={event => setDraft(event.target.value)} placeholder="Write a note…"/><div><span>{draft.length} characters</span><button className="button button-primary" onClick={add}>Add note</button></div></div><div className="notes-head"><h2>Notes</h2><select value={filter} onChange={event => setFilter(event.target.value as typeof filter)}><option>All</option><option>Pinned</option></select></div><div className="note-list">{visible.map(note => <article key={note.id} className={note.pinned ? 'pinned' : ''}><button className="note-pin" aria-label={note.pinned ? 'Unpin note' : 'Pin note'} onClick={() => setNotes(current => current.map(item => item.id === note.id ? { ...item, pinned: !item.pinned } : item))}><Pin size={15}/></button><div><p>{note.text}</p><span>{note.date}</span></div><div className="note-actions"><button aria-label="Delete note" onClick={() => setNotes(current => current.filter(item => item.id !== note.id))}>×</button></div></article>)}{!visible.length && <div className="empty-state"><ClipboardList size={24}/><strong>No notes yet.</strong></div>}</div></div></div>;
+}
+
+function SettingsPage() {
+  const { profile } = useAuth();
+  return <div className="content"><PageHead eyebrow="Workspace" title="Settings" copy="Current connection and access details."/><div className="settings-panel"><div className="source-card"><div className="source-icon"><Database size={16}/></div><div><strong>Supabase operational database</strong><span>Live inventory, sales, and append-only stock ledger</span></div><span className="status status-in-stock"><i/>Connected</span></div><div className="setting-list"><div className="setting-row"><div><strong>Signed in as</strong><span>{profile?.fullName}</span></div><b>{profile?.role}</b></div><div className="setting-row"><div><strong>Inventory authority</strong><span>Derived from stock movements</span></div><b>Ledger</b></div></div></div></div>;
+}
+
+function NotFound({ title, copy, back }: { title: string; copy: string; back: string }) {
+  return <div className="content"><div className="empty-state"><Package size={28}/><strong>{title}</strong><span>{copy}</span><button className="button button-primary" onClick={() => navigate(back)}>Go back</button></div></div>;
+}

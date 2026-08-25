@@ -1,19 +1,19 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { shopRepository } from './repository';
-import type { Product, Sale } from './types';
+import type { Category, Product, Sale } from './types';
 
 export interface ShopDataState {
   products: Product[];
   sales: Sale[];
-  categories: string[];
-  snapshotDate: string;
+  categories: Category[];
+  lastRefresh: string;
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
 }
 
 type ShopDataValues = Omit<ShopDataState, 'refresh'>;
-const initialState: ShopDataValues = { products: [], sales: [], categories: [], snapshotDate: '', loading: true, error: null };
+const initialState: ShopDataValues = { products: [], sales: [], categories: [], lastRefresh: '', loading: true, error: null };
 const ShopDataContext = createContext<ShopDataState | null>(null);
 
 export function ShopDataProvider({ children }: { children: ReactNode }) {
@@ -26,9 +26,9 @@ export function ShopDataProvider({ children }: { children: ReactNode }) {
         shopRepository.getSales(),
         shopRepository.getCategories(),
       ]);
-      setState({ products, sales, categories, snapshotDate: shopRepository.getSnapshotDate(), loading: false, error: null });
+      setState({ products, sales, categories, lastRefresh: shopRepository.getLastRefresh(), loading: false, error: null });
     } catch {
-      setState(current => ({ ...current, loading: false, error: 'The shop snapshot could not be loaded.' }));
+      setState(current => ({ ...current, loading: false, error: 'Live shop data could not be loaded.' }));
     }
   }, []);
   useEffect(() => {
