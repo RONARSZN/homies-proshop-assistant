@@ -18,6 +18,10 @@ export type Product = {
   received: string;
   supplier: string;
   image: string;
+  /** Object path in the product-photos bucket. Null means no photo captured. */
+  imagePath: string | null;
+  /** Short-lived signed URL for imagePath, resolved on load. Null when absent. */
+  imageUrl: string | null;
   sourceStatus?: string;
   isActive: boolean;
 };

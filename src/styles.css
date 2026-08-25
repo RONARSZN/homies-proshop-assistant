@@ -258,22 +258,22 @@ button { cursor: pointer; }
 .group-remaining strong { display: block; font-size: 24px; font-weight: 800; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; }
 .group-remaining small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-/* Photo tile. Every product starts without one, so the empty state
-   IS the design: a dashed tile that invites a capture. */
-.product-icon {
-  width: 46px; height: 46px; flex: none; border-radius: var(--r-tile);
-  display: grid; place-items: center;
-  background: var(--photo-bg); color: var(--muted);
-  font-size: 16px; font-weight: 700;
-}
-.product-icon.neutral { background: transparent; border: 1px dashed var(--dash); color: var(--dash); }
-.hero-product {
-  width: 96px; height: 96px; flex: none; border-radius: 18px;
-  display: grid; place-items: center; text-align: center; padding: 8px;
-  background: var(--photo-bg); color: var(--ink-2);
-  font: 500 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
-}
-.hero-product.neutral { background: transparent; border: 1px dashed var(--dash); color: var(--muted); }
+/* Product photos. Empty is the common case, so the dashed tile is the
+   designed state — never a broken-image box. */
+.product-photo { display: grid; place-items: center; gap: 5px; flex: none; object-fit: cover; background: var(--photo-bg); color: var(--muted); }
+.product-photo.thumb { width: 46px; height: 46px; border-radius: var(--r-tile); }
+.product-photo.hero { width: 96px; height: 96px; border-radius: 18px; }
+.product-photo.empty { background: transparent; border: 1px dashed var(--dash); }
+.product-photo.empty b { font-size: 12px; font-weight: 700; color: var(--muted); }
+.photo-control { display: grid; gap: 8px; justify-items: start; flex: none; }
+.photo-drop { display: block; cursor: pointer; border-radius: 18px; }
+.photo-drop:hover .product-photo.empty { border-color: var(--muted); color: var(--ink-2); }
+.photo-control input:focus-visible + .photo-drop .product-photo,
+.photo-drop:focus-visible .product-photo { outline: 2px solid var(--red); outline-offset: 2px; }
+.photo-remove { min-height: 44px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; }
+.photo-remove:hover:not(:disabled) { color: var(--red); }
+.photo-remove:disabled { opacity: 0.55; cursor: default; }
+.photo-busy { font: 400 12px var(--mono); color: var(--muted); }
 
 .variant-control { display: grid; gap: 7px; margin-bottom: 14px; }
 .variant-control label { font-size: 12px; font-weight: 600; color: var(--ink-2); }

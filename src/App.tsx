@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
+import Camera from 'lucide-react/dist/esm/icons/camera.mjs';
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.mjs';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.mjs';
 import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
@@ -77,6 +78,49 @@ function StatusBadge({ status }: { status: Status }) {
   return <span className={`status status-${status.toLowerCase().replaceAll(' ', '-')}`}><i/>{status}</span>;
 }
 
+/* Every product starts without a photo, so the empty state is the common one:
+   a dashed tile that invites a capture rather than a broken-image box. */
+function ProductPhoto({ product, size, canManage, onSaved }: { product: Product; size: 'thumb' | 'hero'; canManage: boolean; onSaved?: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const inputId = `photo-${product.id}-${size}`;
+
+  async function pick(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setBusy(true); setMessage('');
+    try { await shopRepository.setProductPhoto(product.id, file); await onSaved?.(); }
+    catch (caught) { setMessage(caught instanceof Error ? caught.message : 'Photo could not be saved.'); }
+    finally { setBusy(false); }
+  }
+
+  async function clear() {
+    if (!product.imagePath) return;
+    setBusy(true); setMessage('');
+    try { await shopRepository.removeProductPhoto(product.id, product.imagePath); await onSaved?.(); }
+    catch (caught) { setMessage(caught instanceof Error ? caught.message : 'Photo could not be removed.'); }
+    finally { setBusy(false); }
+  }
+
+  const tile = product.imageUrl
+    ? <img className={`product-photo ${size}`} src={product.imageUrl} alt={`${product.name}, ${product.size}`}/>
+    : <span className={`product-photo ${size} empty`} aria-hidden="true"><Camera size={size === 'hero' ? 21 : 16}/>{size === 'hero' && <b>Add photo</b>}</span>;
+
+  if (!canManage) return product.imageUrl ? tile : <span className={`product-photo ${size} empty`} role="img" aria-label="No photo captured"><Camera size={size === 'hero' ? 21 : 16}/>{size === 'hero' && <b>No photo</b>}</span>;
+
+  return <div className={`photo-control ${size}`}>
+    <label htmlFor={inputId} className="photo-drop">
+      {tile}
+      <span className="sr-only">{product.imageUrl ? `Replace photo for ${product.name}` : `Add photo for ${product.name}`}</span>
+    </label>
+    <input id={inputId} className="sr-only" type="file" accept="image/*" capture="environment" disabled={busy} onChange={pick}/>
+    {size === 'hero' && product.imagePath && <button type="button" className="photo-remove" onClick={() => void clear()} disabled={busy}>Remove</button>}
+    {busy && <span className="photo-busy">Saving…</span>}
+    {message && <p className="form-error" role="alert">{message}</p>}
+  </div>;
+}
+
 function LoadingState() { return <div className="content"><div className="loading-state"><div className="eyebrow">Live operations</div><h1>Loading data…</h1></div></div>; }
 function ErrorState({ error }: { error: string }) { return <div className="content"><div className="loading-state"><div className="eyebrow">Data unavailable</div><h1>Live database unavailable.</h1><p>{error}</p></div></div>; }
 function PageHead({ eyebrow, title, copy, action }: { eyebrow: string; title: string; copy?: string; action?: ReactNode }) { return <div className="page-head"><div><div className="eyebrow">{eyebrow}</div><h1>{title}</h1>{copy && <p>{copy}</p>}</div>{action}</div>; }
@@ -99,7 +143,7 @@ function ProductGroupCard({ group, canManage }: { group: ProductGroup; canManage
   const [selectedId, setSelectedId] = useState(group.variants[0].id);
   const selected = group.variants.find(product => product.id === selectedId) || group.variants[0];
   const remaining = group.variants.reduce((sum, product) => sum + product.qty, 0);
-  return <article className="product-group-card"><div className="product-group-head"><span className="product-icon neutral" aria-hidden="true">?</span><div><strong>{group.name}</strong><small>{group.brand}{group.color !== '—' ? ` · ${group.color}` : ''}</small></div><span className="group-remaining"><strong>{remaining}</strong><small>total remaining</small></span></div><div className="variant-control"><label htmlFor={`variant-${group.key}`}>Select size</label><select id={`variant-${group.key}`} value={selected.id} onChange={event => setSelectedId(event.target.value)}>{group.variants.map(product => <option key={product.id} value={product.id}>{product.size} · {product.sku}</option>)}</select></div><div className="variant-details"><div><span>Selected size</span><strong>{selected.size}</strong></div><div><span>Remaining</span><strong>{selected.qty}</strong></div><div><span>Price</span><strong>{formatPeso(selected.price)}</strong></div><StatusBadge status={statusFor(selected)}/></div>{canManage && <button className="button button-dark edit-variant" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit selected item</button>}</article>;
+  return <article className="product-group-card"><div className="product-group-head"><ProductPhoto product={selected} size="thumb" canManage={false}/><div><strong>{group.name}</strong><small>{group.brand}{group.color !== '—' ? ` · ${group.color}` : ''}</small></div><span className="group-remaining"><strong>{remaining}</strong><small>total remaining</small></span></div><div className="variant-control"><label htmlFor={`variant-${group.key}`}>Select size</label><select id={`variant-${group.key}`} value={selected.id} onChange={event => setSelectedId(event.target.value)}>{group.variants.map(product => <option key={product.id} value={product.id}>{product.size} · {product.sku}</option>)}</select></div><div className="variant-details"><div><span>Selected size</span><strong>{selected.size}</strong></div><div><span>Remaining</span><strong>{selected.qty}</strong></div><div><span>Price</span><strong>{formatPeso(selected.price)}</strong></div><StatusBadge status={statusFor(selected)}/></div>{canManage && <button className="button button-dark edit-variant" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit selected item</button>}</article>;
 }
 
 function Inventory() {
@@ -159,7 +203,7 @@ function ProductDetail({ id }: { id: string }) {
   if (loading) return <LoadingState/>;
   if (error) return <ErrorState error={error}/>;
   if (!product) return <NotFound title="Product not found" copy="That product is not in the live database." back="/inventory"/>;
-  return <div className="content"><button className="back-link" onClick={() => navigate('/inventory')}>← Back to inventory</button><PageHead eyebrow="Inventory · Live product" title={product.name} copy={`${product.brand} · ${product.sku}`}/><div className="detail-grid"><Card title="Item overview" meta={product.category}><div className="item-hero"><div className="hero-product neutral">{product.category}</div><div><StatusBadge status={statusFor(product)}/><h2>{product.name}</h2><p>{product.brand} · {product.category}</p></div></div><div className="detail-fields">{[['SKU', product.sku], ['Size', product.size], ['Color', product.color], ['Supplier', product.supplier], ['Date received', product.received || '—']].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></Card><Card title="Stock & pricing" meta="PHP"><div className="big-stock"><span>Current stock</span><strong>{product.qty}</strong><StatusBadge status={statusFor(product)}/></div><div className="detail-fields two">{[['Selling price', formatPeso(product.price)], ['Unit cost', formatPeso(product.cost)], ['Unit margin', formatPeso(marginFor(product))], ['Inventory value', formatPeso(product.qty * (product.price || 0))], ['Units sold', String(product.sold)]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></Card></div><StockPanel product={product} onSaved={refresh}/>{profile && (profile.role === 'owner' || profile.role === 'manager') && <ProductEditor product={product} categories={categories} onSaved={refresh}/>}</div>;
+  return <div className="content"><button className="back-link" onClick={() => navigate('/inventory')}>← Back to inventory</button><PageHead eyebrow="Inventory · Live product" title={product.name} copy={`${product.brand} · ${product.sku}`}/><div className="detail-grid"><Card title="Item overview" meta={product.category}><div className="item-hero"><ProductPhoto product={product} size="hero" canManage={profile?.role === 'owner' || profile?.role === 'manager'} onSaved={refresh}/><div><StatusBadge status={statusFor(product)}/><h2>{product.name}</h2><p>{product.brand} · {product.category}</p></div></div><div className="detail-fields">{[['SKU', product.sku], ['Size', product.size], ['Color', product.color], ['Supplier', product.supplier], ['Date received', product.received || '—']].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></Card><Card title="Stock & pricing" meta="PHP"><div className="big-stock"><span>Current stock</span><strong>{product.qty}</strong><StatusBadge status={statusFor(product)}/></div><div className="detail-fields two">{[['Selling price', formatPeso(product.price)], ['Unit cost', formatPeso(product.cost)], ['Unit margin', formatPeso(marginFor(product))], ['Inventory value', formatPeso(product.qty * (product.price || 0))], ['Units sold', String(product.sold)]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div></Card></div><StockPanel product={product} onSaved={refresh}/>{profile && (profile.role === 'owner' || profile.role === 'manager') && <ProductEditor product={product} categories={categories} onSaved={refresh}/>}</div>;
 }
 
 function StockPanel({ product, onSaved }: { product: Product; onSaved: () => Promise<void> }) {

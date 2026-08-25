@@ -1,12 +1,30 @@
 import { supabase } from './supabase';
+import { downscaleImage } from './image';
 import type { CartLine, Category, Product, ProductInput, Sale, StockMovement } from './types';
+
+const PHOTO_BUCKET = 'product-photos';
+const PHOTO_URL_TTL = 3600;
 
 type ProductRow = {
   id: string; sku: string; name: string; category_id: string; brand: string | null;
   size: string | null; colour: string | null; unit_cost: number | null;
   selling_price: number | null; supplier: string | null; received_at: string | null;
-  is_active: boolean; categories: { name: string } | { name: string }[] | null;
+  is_active: boolean; image_path: string | null;
+  categories: { name: string } | { name: string }[] | null;
 };
+
+// The bucket is private, so paths need signing before they can render. One
+// batch call for the whole catalogue rather than one request per row.
+async function signPhotoUrls(paths: string[]): Promise<Map<string, string>> {
+  const signed = new Map<string, string>();
+  if (!paths.length) return signed;
+  const { data, error } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrls(paths, PHOTO_URL_TTL);
+  if (error) return signed; // A missing photo must never break the inventory list.
+  (data || []).forEach(item => {
+    if (item.path && item.signedUrl) signed.set(item.path, item.signedUrl);
+  });
+  return signed;
+}
 
 type SaleRow = {
   id: string; sold_at: string; subtotal: number | null; discount: number | null;
@@ -35,6 +53,8 @@ export interface ShopRepository {
   updateProduct(productId: string, values: Omit<ProductInput, 'openingQuantity'> & { isActive: boolean }): Promise<void>;
   completeSale(lines: CartLine[], orderDiscount: number, paymentMethod: string): Promise<string>;
   voidSale(saleId: string): Promise<void>;
+  setProductPhoto(productId: string, file: File): Promise<void>;
+  removeProductPhoto(productId: string, path: string): Promise<void>;
 }
 
 let lastRefresh = '';
@@ -42,7 +62,7 @@ let lastRefresh = '';
 export const shopRepository: ShopRepository = {
   async getProducts() {
     const [{ data: productData, error: productError }, { data: stockData, error: stockError }, { data: soldData, error: soldError }] = await Promise.all([
-      supabase.from('products').select('id,sku,name,category_id,brand,size,colour,unit_cost,selling_price,supplier,received_at,is_active,categories(name)').order('name'),
+      supabase.from('products').select('id,sku,name,category_id,brand,size,colour,unit_cost,selling_price,supplier,received_at,is_active,image_path,categories(name)').order('name'),
       supabase.from('product_stock').select('product_id,on_hand'),
       supabase.from('sale_items').select('product_id,qty,sales!inner(status)').eq('sales.status', 'completed'),
     ]);
@@ -54,8 +74,10 @@ export const shopRepository: ShopRepository = {
     (soldData || []).forEach(row => {
       if (row.product_id) sold.set(row.product_id, (sold.get(row.product_id) || 0) + Number(row.qty));
     });
+    const rows = (productData || []) as ProductRow[];
+    const photoUrls = await signPhotoUrls(rows.map(row => row.image_path).filter((path): path is string => Boolean(path)));
     lastRefresh = new Date().toISOString();
-    return ((productData || []) as ProductRow[]).map(row => ({
+    return rows.map(row => ({
       id: row.id,
       sku: row.sku,
       name: row.name,
@@ -71,6 +93,8 @@ export const shopRepository: ShopRepository = {
       received: row.received_at || '',
       supplier: row.supplier || '—',
       image: 'neutral',
+      imagePath: row.image_path,
+      imageUrl: row.image_path ? photoUrls.get(row.image_path) || null : null,
       isActive: row.is_active,
     }));
   },
@@ -177,5 +201,27 @@ export const shopRepository: ShopRepository = {
   async voidSale(saleId) {
     const { error } = await supabase.rpc('void_sale', { p_sale_id: saleId });
     fail('Sale could not be voided', error);
+  },
+
+  async setProductPhoto(productId, file) {
+    const blob = await downscaleImage(file);
+    // Fixed path per product: replacing upserts in place, so a product can
+    // never leave an orphaned object behind in the bucket.
+    const path = `${productId}.jpg`;
+    const { error } = await supabase.storage
+      .from(PHOTO_BUCKET)
+      .upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+    fail('Photo could not be uploaded', error);
+    const { error: linkError } = await supabase.from('products').update({ image_path: path }).eq('id', productId);
+    fail('Photo could not be linked to the product', linkError);
+  },
+
+  async removeProductPhoto(productId, path) {
+    const { error: clearError } = await supabase.from('products').update({ image_path: null }).eq('id', productId);
+    fail('Photo reference could not be cleared', clearError);
+    // Clear the reference first: a failed object delete leaves a harmless
+    // orphan, whereas a dangling image_path renders as a broken photo.
+    const { error } = await supabase.storage.from(PHOTO_BUCKET).remove([path]);
+    fail('Photo could not be removed from storage', error);
   },
 };
