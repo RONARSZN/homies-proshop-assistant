@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { downscaleImage } from './image';
-import type { CartLine, Category, Product, ProductInput, Sale, StockMovement } from './types';
+import type { CartLine, Category, Product, ProductInput, RiderAllocation, Sale, StockMovement, TeamRider } from './types';
 
 const PHOTO_BUCKET = 'product-photos';
 const PHOTO_URL_TTL = 3600;
@@ -56,6 +56,11 @@ export interface ShopRepository {
   voidSale(saleId: string): Promise<void>;
   setProductPhoto(productId: string, file: File): Promise<void>;
   removeProductPhoto(productId: string, path: string): Promise<void>;
+  getRiders(): Promise<TeamRider[]>;
+  createRider(fullName: string, nickname: string | null, note: string | null): Promise<void>;
+  setRiderActive(riderId: string, isActive: boolean): Promise<void>;
+  getAllocations(): Promise<RiderAllocation[]>;
+  allocateToRider(riderId: string, productId: string, qty: number, note: string | null): Promise<void>;
 }
 
 let lastRefresh = '';
@@ -171,9 +176,9 @@ export const shopRepository: ShopRepository = {
   getLastRefresh() { return lastRefresh; },
 
   async getMovements(productId) {
-    const { data, error } = await supabase.from('stock_movements').select('id,product_id,delta,reason,reference_id,note,created_at').eq('product_id', productId).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('stock_movements').select('id,product_id,delta,reason,reference_id,note,created_at,rider_id').eq('product_id', productId).order('created_at', { ascending: false });
     fail('Movement history could not be loaded', error);
-    return (data || []).map(row => ({ id: row.id, productId: row.product_id, delta: row.delta, reason: row.reason, referenceId: row.reference_id, note: row.note, createdAt: row.created_at }));
+    return (data || []).map(row => ({ id: row.id, productId: row.product_id, delta: row.delta, reason: row.reason, referenceId: row.reference_id, note: row.note, createdAt: row.created_at, riderId: row.rider_id ?? null }));
   },
 
   async addMovement(productId, delta, reason, note) {
@@ -238,6 +243,59 @@ export const shopRepository: ShopRepository = {
     fail('Photo could not be uploaded', error);
     const { error: linkError } = await supabase.from('products').update({ image_path: path }).eq('id', productId);
     fail('Photo could not be linked to the product', linkError);
+  },
+
+  async getRiders() {
+    const { data, error } = await supabase.from('team_riders').select('id,full_name,nickname,note,is_active,created_at').order('full_name');
+    fail('Team riders could not be loaded', error);
+    return (data || []).map(row => ({ id: row.id, fullName: row.full_name, nickname: row.nickname, note: row.note, isActive: row.is_active, createdAt: row.created_at }));
+  },
+
+  async createRider(fullName, nickname, note) {
+    const { error } = await supabase.from('team_riders').insert({ full_name: fullName.trim(), nickname, note });
+    fail('Rider could not be added', error);
+  },
+
+  async setRiderActive(riderId, isActive) {
+    const { error } = await supabase.from('team_riders').update({ is_active: isActive }).eq('id', riderId);
+    fail('Rider could not be updated', error);
+  },
+
+  async getAllocations() {
+    const { data, error } = await supabase
+      .from('stock_movements')
+      .select('id,rider_id,product_id,delta,note,created_at,products(name,sku,size)')
+      .eq('reason', 'allocation')
+      .order('created_at', { ascending: false });
+    fail('Allocations could not be loaded', error);
+    type Row = { id: string; rider_id: string; product_id: string; delta: number; note: string | null; created_at: string; products: { name: string; sku: string; size: string | null } | Array<{ name: string; sku: string; size: string | null }> | null };
+    return ((data || []) as unknown as Row[]).map(row => {
+      const product = Array.isArray(row.products) ? row.products[0] : row.products;
+      return {
+        id: row.id,
+        riderId: row.rider_id,
+        productId: row.product_id,
+        productName: product?.name || 'Unknown product',
+        sku: product?.sku || '—',
+        size: product?.size || '—',
+        // Allocations are stored as a negative delta, like a sale. Units out
+        // reads better than a minus sign on every row.
+        qty: Math.abs(row.delta),
+        note: row.note,
+        createdAt: row.created_at,
+      };
+    });
+  },
+
+  async allocateToRider(riderId, productId, qty, note) {
+    const { error } = await supabase.from('stock_movements').insert({
+      product_id: productId,
+      delta: -Math.abs(qty),
+      reason: 'allocation',
+      rider_id: riderId,
+      note,
+    });
+    fail('Gear could not be allocated', error);
   },
 
   async removeProductPhoto(productId, path) {

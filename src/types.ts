@@ -62,12 +62,37 @@ export type Sale = {
 
 export type Profile = { id: string; fullName: string; role: Role };
 
+export type MovementReason = 'opening_balance' | 'sale' | 'return' | 'receipt' | 'adjustment' | 'write_off' | 'allocation';
+
 export type StockMovement = {
   id: string;
   productId: string;
   delta: number;
-  reason: 'opening_balance' | 'sale' | 'return' | 'receipt' | 'adjustment' | 'write_off';
+  reason: MovementReason;
   referenceId: string | null;
+  note: string | null;
+  createdAt: string;
+  riderId: string | null;
+};
+
+export type TeamRider = {
+  id: string;
+  fullName: string;
+  nickname: string | null;
+  note: string | null;
+  isActive: boolean;
+  createdAt: string;
+};
+
+/** One line of a rider's gear history, joined to the product it came from. */
+export type RiderAllocation = {
+  id: string;
+  riderId: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  size: string;
+  qty: number;
   note: string | null;
   createdAt: string;
 };

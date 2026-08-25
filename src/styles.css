@@ -450,6 +450,36 @@ button { cursor: pointer; }
 .pos-checkout .button-primary { min-height: 62px; font-size: 16px; }
 .pos-checkout .form-error { color: #F07A72; }
 
+/* ---------------------------------------------------- team riders */
+
+.team-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; margin-bottom: 14px; }
+.allocate-form { display: grid; gap: 8px; }
+.allocate-form label { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.allocate-form input, .allocate-form select {
+  min-height: 44px; padding: 0 14px; border-radius: var(--r-tile);
+  border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink); font-size: 14px; width: 100%;
+}
+.allocate-form .button-primary { margin-top: 8px; }
+.allocate-form .pos-results { max-height: 220px; }
+
+.chosen-product { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface-2); border-radius: var(--r-tile); padding: 12px 14px; }
+.chosen-product strong { display: block; font-size: 14px; font-weight: 700; }
+.chosen-product small { display: block; font: 400 11px var(--mono); color: var(--muted); margin-top: 3px; }
+
+.rider-list { display: grid; }
+.rider-list > div { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 11px 0; border-top: 1px solid var(--line); }
+.rider-list > div:first-child { border-top: 0; }
+.rider-list > div.inactive { opacity: 0.55; }
+.rider-name { flex: 1; min-width: 0; }
+.rider-name strong { display: block; font-size: 14px; font-weight: 700; }
+.rider-name small { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
+.rider-units { text-align: right; flex: none; }
+.rider-units strong { display: block; font: 500 16px var(--mono); font-variant-numeric: tabular-nums; }
+.rider-units small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.text-link { border: 0; background: transparent; padding: 0; color: var(--ink-2); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
+.text-link:hover { color: var(--red); }
+
 /* --------------------------------------------------------- notes */
 
 .notes-layout { max-width: 900px; }
@@ -573,7 +603,7 @@ button { cursor: pointer; }
 
 @media (max-width: 1180px) {
   .kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .dashboard-grid, .pos-layout, .detail-grid { grid-template-columns: 1fr; }
+  .dashboard-grid, .pos-layout, .detail-grid, .team-layout { grid-template-columns: 1fr; }
   .movement-form { grid-template-columns: 1fr 1fr; }
   .movement-form .button { grid-column: 1 / -1; }
 }

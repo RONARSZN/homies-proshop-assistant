@@ -18,20 +18,22 @@ import Search from 'lucide-react/dist/esm/icons/search.mjs';
 import Settings from 'lucide-react/dist/esm/icons/settings.mjs';
 import ShoppingCart from 'lucide-react/dist/esm/icons/shopping-cart.mjs';
 import Tag from 'lucide-react/dist/esm/icons/tag.mjs';
+import Users from 'lucide-react/dist/esm/icons/users.mjs';
 import X from 'lucide-react/dist/esm/icons/x.mjs';
 import { AuthProvider, useAuth } from './AuthProvider';
 import { DataProblems } from './DataProblems';
 import { LiveOverview } from './LiveOverview';
+import { TeamAllocation } from './TeamAllocation';
 import { attentionCount, formatPeso, marginFor, reportingPeriod, saleTotal, statusFor, type Status } from './domain';
 import { shopRepository } from './repository';
 import { ShopDataProvider, useShopData } from './useShopData';
 import type { CartLine, Category, Note, Product, ProductInput, StockMovement } from './types';
 
-const nav = [['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', Tag], ['/pos', 'POS', ShoppingCart], ['/notes', 'Notes', ClipboardList]] as const;
-// The phone capsule carries four destinations, not five: at 390px a fifth
-// target leaves no room for labels, and icon-only navigation is guesswork.
-// Notes is the least used at a counter, so it lives behind More.
-const mobileNav = nav.filter(([href]) => href !== '/notes');
+const nav = [['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', Tag], ['/pos', 'POS', ShoppingCart], ['/team', 'Team', Users], ['/notes', 'Notes', ClipboardList]] as const;
+// The phone capsule carries four destinations, not six: at 390px more targets
+// leave no room for labels, and icon-only navigation is guesswork. Team and
+// Notes are the least used at a counter, so they live behind More.
+const mobileNav = nav.filter(([href]) => href !== '/notes' && href !== '/team');
 const navigate = (path: string) => { window.history.pushState({}, '', path); window.dispatchEvent(new PopStateEvent('popstate')); };
 const routeKey = () => window.location.pathname.replace(/\/$/, '') || '/';
 
@@ -66,6 +68,7 @@ function Router() {
   else if (path.startsWith('/sales/')) page = <Transaction id={decodeURIComponent(path.slice('/sales/'.length))} />;
   else if (path === '/pos') page = <Pos />;
   else if (path === '/data-problems') page = <DataProblems />;
+  else if (path === '/team') page = <TeamAllocation />;
   else if (path === '/notes') page = <Notes />;
   else if (path === '/settings') page = <SettingsPage />;
   else page = <NotFound title="Page not found" copy="That page does not exist." back="/" />;
