@@ -79,21 +79,26 @@ export type TeamRider = {
   id: string;
   fullName: string;
   nickname: string | null;
+  team: string;
   note: string | null;
   isActive: boolean;
   createdAt: string;
 };
 
-/** One line of a rider's gear history, joined to the product it came from. */
+/** One line of a rider's gear history. */
 export type RiderAllocation = {
   id: string;
   riderId: string;
-  productId: string;
+  productId: string | null;
+  /** Product name where the item code matched a product, else the raw code. */
   productName: string;
-  sku: string;
-  size: string;
+  itemCode: string;
+  size: string | null;
   qty: number;
+  allocatedAt: string | null;
   note: string | null;
+  /** Imported from the workbook: never moved stock and never should. */
+  isHistorical: boolean;
   createdAt: string;
 };
 

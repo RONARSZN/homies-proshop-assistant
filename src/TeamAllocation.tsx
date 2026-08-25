@@ -97,6 +97,7 @@ export function TeamAllocation() {
       <div><span>Active riders</span><strong>{activeRiders.length}</strong></div>
       <div><span>Units allocated</span><strong>{totalUnits}</strong></div>
       <div><span>Allocations</span><strong>{allocations.length}</strong></div>
+      <div><span>Imported</span><strong>{allocations.filter(item => item.isHistorical).length}</strong></div>
     </div>
 
     {addingRider && canManage && <section className="card wide">
@@ -148,7 +149,7 @@ export function TeamAllocation() {
         {riders.length === 0
           ? <div className="empty-state"><Users size={24}/><strong>No riders yet.</strong><span>Add a rider to start allocating gear.</span></div>
           : <div className="rider-list">{riders.map(rider => <div key={rider.id} className={rider.isActive ? '' : 'inactive'}>
-              <span className="rider-name"><strong>{rider.fullName}</strong><small>{rider.nickname || (rider.isActive ? 'Active' : 'Inactive')}</small></span>
+              <span className="rider-name"><strong>{rider.fullName}</strong><small>{rider.team}{rider.nickname ? ` · ${rider.nickname}` : ''}{rider.isActive ? '' : ' · Inactive'}</small></span>
               <span className="rider-units"><strong>{unitsFor(rider.id)}</strong><small>units</small></span>
               {canManage && <button className="button" onClick={() => void shopRepository.setRiderActive(rider.id, !rider.isActive).then(load)}>{rider.isActive ? 'Deactivate' : 'Reactivate'}</button>}
             </div>)}</div>}
@@ -159,13 +160,20 @@ export function TeamAllocation() {
       <div className="card-head"><div><h2>Recent allocations</h2><span>{allocations.length} recorded</span></div></div>
       {allocations.length === 0
         ? <p className="empty-copy">Nothing allocated yet.</p>
-        : <div className="movement-list">{allocations.slice(0, 25).map(item => {
+        : <div className="movement-list">{allocations.slice(0, 40).map(item => {
             const rider = riders.find(entry => entry.id === item.riderId);
             return <div key={item.id}>
-              <span>{new Date(item.createdAt).toLocaleString('en-PH')}</span>
+              <span>{item.allocatedAt || <em className="undated">No date in source</em>}</span>
               <strong>{rider?.fullName || 'Unknown rider'}</strong>
               <b className="negative">−{item.qty}</b>
-              <small><button className="text-link" onClick={() => navigate(`/inventory/${item.productId}`)}>{item.productName}</button> · {item.sku}{item.note ? ` · ${item.note}` : ''}</small>
+              <small>
+                {item.productId
+                  ? <button className="text-link" onClick={() => navigate(`/inventory/${item.productId}`)}>{item.productName}</button>
+                  : <span title="This item code matches no current product">{item.itemCode}</span>}
+                {item.size ? ` · ${item.size}` : ''}
+                {item.isHistorical && <span className="pullout-tag">Imported</span>}
+                {item.note ? ` · ${item.note}` : ''}
+              </small>
             </div>;
           })}</div>}
     </section>

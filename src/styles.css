@@ -480,6 +480,16 @@ button { cursor: pointer; }
 .text-link { border: 0; background: transparent; padding: 0; color: var(--ink-2); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .text-link:hover { color: var(--red); }
 
+/* Imported pullout rows never moved stock, so they are marked rather than
+   left to look like something this app recorded. */
+.pullout-tag {
+  display: inline-flex; align-items: center; margin-left: 8px;
+  background: var(--surface-2); color: var(--muted);
+  border-radius: var(--r-pill); padding: 3px 9px;
+  font: 500 11px var(--mono); letter-spacing: 0.04em;
+}
+.undated { font-style: normal; color: var(--dash); }
+
 /* --------------------------------------------------------- notes */
 
 .notes-layout { max-width: 900px; }

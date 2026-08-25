@@ -246,9 +246,9 @@ export const shopRepository: ShopRepository = {
   },
 
   async getRiders() {
-    const { data, error } = await supabase.from('team_riders').select('id,full_name,nickname,note,is_active,created_at').order('full_name');
+    const { data, error } = await supabase.from('team_riders').select('id,full_name,nickname,team,note,is_active,created_at').order('full_name');
     fail('Team riders could not be loaded', error);
-    return (data || []).map(row => ({ id: row.id, fullName: row.full_name, nickname: row.nickname, note: row.note, isActive: row.is_active, createdAt: row.created_at }));
+    return (data || []).map(row => ({ id: row.id, fullName: row.full_name, nickname: row.nickname, team: row.team || 'Homies', note: row.note, isActive: row.is_active, createdAt: row.created_at }));
   },
 
   async createRider(fullName, nickname, note) {
@@ -263,37 +263,52 @@ export const shopRepository: ShopRepository = {
 
   async getAllocations() {
     const { data, error } = await supabase
-      .from('stock_movements')
-      .select('id,rider_id,product_id,delta,note,created_at,products(name,sku,size)')
-      .eq('reason', 'allocation')
+      .from('rider_allocations')
+      .select('id,rider_id,product_id,item_code,qty,allocated_at,note,is_historical,created_at,products(name,size)')
+      .order('allocated_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false });
     fail('Allocations could not be loaded', error);
-    type Row = { id: string; rider_id: string; product_id: string; delta: number; note: string | null; created_at: string; products: { name: string; sku: string; size: string | null } | Array<{ name: string; sku: string; size: string | null }> | null };
+    type Row = { id: string; rider_id: string; product_id: string | null; item_code: string; qty: number; allocated_at: string | null; note: string | null; is_historical: boolean; created_at: string; products: { name: string; size: string | null } | Array<{ name: string; size: string | null }> | null };
     return ((data || []) as unknown as Row[]).map(row => {
       const product = Array.isArray(row.products) ? row.products[0] : row.products;
       return {
         id: row.id,
         riderId: row.rider_id,
         productId: row.product_id,
-        productName: product?.name || 'Unknown product',
-        sku: product?.sku || '—',
-        size: product?.size || '—',
-        // Allocations are stored as a negative delta, like a sale. Units out
-        // reads better than a minus sign on every row.
-        qty: Math.abs(row.delta),
+        // Imported codes that match no product fall back to the raw code
+        // rather than inventing a name for something we cannot identify.
+        productName: product?.name || row.item_code,
+        itemCode: row.item_code,
+        size: product?.size || null,
+        qty: Number(row.qty),
+        allocatedAt: row.allocated_at,
         note: row.note,
+        isHistorical: row.is_historical,
         createdAt: row.created_at,
       };
     });
   },
 
+  // A live allocation writes the ledger entry first, then records the
+  // allocation against it. Historical rows carry no movement and are never
+  // created here — they only ever arrive through the seed migration.
   async allocateToRider(riderId, productId, qty, note) {
-    const { error } = await supabase.from('stock_movements').insert({
-      product_id: productId,
-      delta: -Math.abs(qty),
-      reason: 'allocation',
+    const product = await supabase.from('products').select('sku').eq('id', productId).single();
+    fail('Product could not be read', product.error);
+    const movement = await supabase.from('stock_movements')
+      .insert({ product_id: productId, delta: -Math.abs(qty), reason: 'allocation', note })
+      .select('id')
+      .single();
+    fail('Stock could not be adjusted for this allocation', movement.error);
+    const { error } = await supabase.from('rider_allocations').insert({
       rider_id: riderId,
+      product_id: productId,
+      item_code: product.data?.sku || '',
+      qty: Math.abs(qty),
+      allocated_at: new Date().toISOString().slice(0, 10),
       note,
+      is_historical: false,
+      movement_id: movement.data?.id,
     });
     fail('Gear could not be allocated', error);
   },
