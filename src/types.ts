@@ -55,6 +55,8 @@ export type Sale = {
   customerName: string | null;
   /** Display name of the staff member who rang up the sale, from created_by. */
   sellerName: string | null;
+  /** Seller name from an imported sheet, where created_by is unknown. */
+  sellerNote: string | null;
   status: 'completed' | 'voided';
   isHistorical: boolean;
   items: SaleItem[];

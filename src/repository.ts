@@ -29,7 +29,7 @@ async function signPhotoUrls(paths: string[]): Promise<Map<string, string>> {
 type SaleRow = {
   id: string; sold_at: string; subtotal: number | null; discount: number | null;
   total: number | null; payment_method: string | null; status: 'completed' | 'voided';
-  is_historical: boolean; customer_name: string | null; created_by: string | null;
+  is_historical: boolean; customer_name: string | null; created_by: string | null; seller_note: string | null;
   sale_items: Array<{
     id: string; product_id: string | null; description: string; qty: number;
     unit_price: number | null; discount: number | null; line_total: number | null;
@@ -110,7 +110,7 @@ export const shopRepository: ShopRepository = {
     // embed the seller. One profiles fetch and a client-side map is cheaper
     // than a view, and matches how stock and sold counts are already joined.
     const items = 'sale_items(id,product_id,description,qty,unit_price,discount,line_total,products(sku,brand,categories(name)))';
-    const select = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,customer_name,${items}`;
+    const select = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,customer_name,seller_note,${items}`;
 
     const [primary, { data: profileData }] = await Promise.all([
       supabase.from('sales').select(select).order('sold_at', { ascending: false }),
@@ -153,6 +153,7 @@ export const shopRepository: ShopRepository = {
         paymentMethod: row.payment_method,
         customerName: row.customer_name ?? null,
         sellerName: row.created_by ? sellers.get(row.created_by) || null : null,
+        sellerNote: row.seller_note ?? null,
         status: row.status,
         isHistorical: row.is_historical,
         items,
