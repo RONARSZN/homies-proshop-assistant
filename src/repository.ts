@@ -9,7 +9,7 @@ export interface ShopRepository {
 }
 
 export const shopRepository: ShopRepository = {
-  async getProducts() { return liveProducts as Product[]; },
-  async getSales() { return liveSales as Sale[]; },
+  async getProducts() { return liveProducts.map(product => ({ ...product, cost: product.cost === 0 ? null : product.cost })); },
+  async getSales() { return liveSales.map(sale => ({ ...sale })); },
   getSnapshotDate() { return snapshotDate; },
 };
