@@ -110,23 +110,16 @@ export const shopRepository: ShopRepository = {
     // embed the seller. One profiles fetch and a client-side map is cheaper
     // than a view, and matches how stock and sold counts are already joined.
     const items = 'sale_items(id,product_id,description,qty,unit_price,discount,line_total,products(sku,brand,categories(name)))';
-    const withCustomer = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,customer_name,${items}`;
-    const withoutCustomer = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,${items}`;
+    const select = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,customer_name,${items}`;
 
     const [primary, { data: profileData }] = await Promise.all([
-      supabase.from('sales').select(withCustomer).order('sold_at', { ascending: false }),
+      supabase.from('sales').select(select).order('sold_at', { ascending: false }),
       supabase.from('profiles').select('id,full_name'),
     ]);
 
-    // customer_name arrives with 20260825181000_add_sale_customer_name. Until
-    // that migration is applied the column does not exist and the select 404s,
-    // which would take down every screen, not just Sales. Fall back rather
-    // than hard-fail. Remove this once the migration is deployed everywhere.
-    let { data, error } = primary;
-    if (error) {
-      const retry = await supabase.from('sales').select(withoutCustomer).order('sold_at', { ascending: false });
-      if (!retry.error) { data = retry.data as typeof data; error = null; }
-    }
+    // A future sales-column addition has the same Promise.all blast radius:
+    // one failed select would blank products, sales, and categories together.
+    const { data, error } = primary;
     fail('Sales could not be loaded', error);
     const sellers = new Map((profileData || []).map(profile => [profile.id, profile.full_name]));
     return ((data || []) as unknown as SaleRow[]).map(row => {
