@@ -23,7 +23,7 @@ export const reportingPeriod = (sales: Sale[]) => {
 };
 export const inventoryValue = (products: Product[]) => products.reduce((sum, product) => sum + (product.qty * (product.price || 0)), 0);
 export const activeSkuCount = (products: Product[]) => products.filter(product => product.qty > 0).length;
-export const attentionCount = (products: Product[]) => products.filter(product => statusFor(product) === 'Low Stock' || statusFor(product) === 'Out of Stock').length;
+export const attentionCount = (products: Product[]) => products.filter(product => statusFor(product) === 'Slow Moving' || statusFor(product) === 'Data Missing').length;
 export const bestSellers = (products: Product[]) => [...products].sort((a, b) => b.sold - a.sold);
 export const productsWithZeroPriceInStock = (products: Product[]) => products.filter(product => product.qty > 0 && product.price === 0).length;
 export const duplicateSkuRows = (products: Product[]) => {
