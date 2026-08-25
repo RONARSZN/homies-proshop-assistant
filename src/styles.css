@@ -183,7 +183,9 @@ button { cursor: pointer; }
 
 /* -------------------------------------------------------------- KPI */
 
-.kpi-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+/* auto-fit rather than a fixed count: the tile set changes as metrics are
+   added, and a hard repeat(5) silently squashed the sixth. */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin-bottom: 16px; }
 .kpi { background: var(--surface); border-radius: 18px; padding: 16px; min-height: 118px; }
 .kpi-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font: 500 11px var(--mono); color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
 .kpi-top svg { color: var(--muted); flex: none; }

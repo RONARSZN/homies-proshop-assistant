@@ -21,6 +21,40 @@ export const reportingPeriod = (sales: Sale[]) => {
   const date = new Date(`${key}-01T00:00:00`);
   return { label: date.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' }), sales: sales.filter(sale => sale.date.startsWith(key)) };
 };
+/* ---------------------------------------------------------- month analytics
+   The overview reports the CURRENT calendar month, not the month of the last
+   recorded sale. reportingPeriod stays as-is for the Sales page, where the
+   latest-sale framing is still what you want when browsing history. */
+
+export const monthKeyOf = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+export const monthLabelOf = (key: string) => new Date(`${key}-01T00:00:00`).toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+
+/** Voided sales are excluded: they are not revenue and never were. */
+export const salesInMonth = (sales: Sale[], key: string) =>
+  sales.filter(sale => sale.status === 'completed' && sale.date.startsWith(key));
+
+export type MonthTotals = { revenue: number; units: number; transactions: number };
+export const monthTotals = (sales: Sale[], key: string): MonthTotals => {
+  const rows = salesInMonth(sales, key);
+  return {
+    revenue: rows.reduce((sum, sale) => sum + (saleTotal(sale) || 0), 0),
+    units: rows.reduce((sum, sale) => sum + sale.qty, 0),
+    transactions: rows.length,
+  };
+};
+
+/** Ranked by units actually sold this month, not all-time product.sold. */
+export const topSellersInMonth = (sales: Sale[], key: string) => {
+  const units = new Map<string, { name: string; sku: string; qty: number }>();
+  salesInMonth(sales, key).forEach(sale => sale.items.forEach(item => {
+    const id = item.productId || `unmatched:${item.description}`;
+    const entry = units.get(id) || { name: item.description, sku: item.sku || '—', qty: 0 };
+    entry.qty += item.qty;
+    units.set(id, entry);
+  }));
+  return [...units.entries()].map(([id, value]) => ({ id, ...value })).sort((a, b) => b.qty - a.qty);
+};
+
 export const inventoryValue = (products: Product[]) => products.reduce((sum, product) => sum + (product.qty * (product.price || 0)), 0);
 export const activeSkuCount = (products: Product[]) => products.filter(product => product.qty > 0).length;
 export const attentionCount = (products: Product[]) => products.filter(product => statusFor(product) === 'Slow Moving' || statusFor(product) === 'Data Missing').length;
