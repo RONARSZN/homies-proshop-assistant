@@ -29,7 +29,8 @@ async function signPhotoUrls(paths: string[]): Promise<Map<string, string>> {
 type SaleRow = {
   id: string; sold_at: string; subtotal: number | null; discount: number | null;
   total: number | null; payment_method: string | null; status: 'completed' | 'voided';
-  is_historical: boolean; sale_items: Array<{
+  is_historical: boolean; customer_name: string | null; created_by: string | null;
+  sale_items: Array<{
     id: string; product_id: string | null; description: string; qty: number;
     unit_price: number | null; discount: number | null; line_total: number | null;
     products: { sku: string; brand: string | null; categories: { name: string } | { name: string }[] | null } | Array<{ sku: string; brand: string | null; categories: { name: string } | { name: string }[] | null }> | null;
@@ -51,7 +52,7 @@ export interface ShopRepository {
   addMovement(productId: string, delta: number, reason: StockMovement['reason'], note: string | null): Promise<void>;
   createProduct(values: ProductInput): Promise<string>;
   updateProduct(productId: string, values: Omit<ProductInput, 'openingQuantity'> & { isActive: boolean }): Promise<void>;
-  completeSale(lines: CartLine[], orderDiscount: number, paymentMethod: string): Promise<string>;
+  completeSale(lines: CartLine[], orderDiscount: number, paymentMethod: string, customerName: string | null): Promise<string>;
   voidSale(saleId: string): Promise<void>;
   setProductPhoto(productId: string, file: File): Promise<void>;
   removeProductPhoto(productId: string, path: string): Promise<void>;
@@ -100,8 +101,29 @@ export const shopRepository: ShopRepository = {
   },
 
   async getSales() {
-    const { data, error } = await supabase.from('sales').select('id,sold_at,subtotal,discount,total,payment_method,status,is_historical,sale_items(id,product_id,description,qty,unit_price,discount,line_total,products(sku,brand,categories(name)))').order('sold_at', { ascending: false });
+    // sales.created_by points at auth.users, not profiles, so PostgREST cannot
+    // embed the seller. One profiles fetch and a client-side map is cheaper
+    // than a view, and matches how stock and sold counts are already joined.
+    const items = 'sale_items(id,product_id,description,qty,unit_price,discount,line_total,products(sku,brand,categories(name)))';
+    const withCustomer = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,customer_name,${items}`;
+    const withoutCustomer = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,${items}`;
+
+    const [primary, { data: profileData }] = await Promise.all([
+      supabase.from('sales').select(withCustomer).order('sold_at', { ascending: false }),
+      supabase.from('profiles').select('id,full_name'),
+    ]);
+
+    // customer_name arrives with 20260825181000_add_sale_customer_name. Until
+    // that migration is applied the column does not exist and the select 404s,
+    // which would take down every screen, not just Sales. Fall back rather
+    // than hard-fail. Remove this once the migration is deployed everywhere.
+    let { data, error } = primary;
+    if (error) {
+      const retry = await supabase.from('sales').select(withoutCustomer).order('sold_at', { ascending: false });
+      if (!retry.error) { data = retry.data as typeof data; error = null; }
+    }
     fail('Sales could not be loaded', error);
+    const sellers = new Map((profileData || []).map(profile => [profile.id, profile.full_name]));
     return ((data || []) as unknown as SaleRow[]).map(row => {
       const items = row.sale_items.map(item => {
         const product = relatedProduct(item.products);
@@ -131,6 +153,8 @@ export const shopRepository: ShopRepository = {
         subtotal: row.subtotal === null ? null : Number(row.subtotal),
         total: row.total === null ? null : Number(row.total),
         paymentMethod: row.payment_method,
+        customerName: row.customer_name ?? null,
+        sellerName: row.created_by ? sellers.get(row.created_by) || null : null,
         status: row.status,
         isHistorical: row.is_historical,
         items,
@@ -192,8 +216,8 @@ export const shopRepository: ShopRepository = {
     fail('Product could not be updated', error);
   },
 
-  async completeSale(lines, orderDiscount, paymentMethod) {
-    const { data, error } = await supabase.rpc('complete_sale', { p_items: lines.map(line => ({ product_id: line.productId, qty: line.qty, unit_price: line.unitPrice, discount: line.discount })), p_order_discount: orderDiscount, p_payment_method: paymentMethod });
+  async completeSale(lines, orderDiscount, paymentMethod, customerName) {
+    const { data, error } = await supabase.rpc('complete_sale', { p_items: lines.map(line => ({ product_id: line.productId, qty: line.qty, unit_price: line.unitPrice, discount: line.discount })), p_order_discount: orderDiscount, p_payment_method: paymentMethod, p_customer_name: customerName });
     fail('Sale could not be completed', error);
     return String(data);
   },

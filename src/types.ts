@@ -51,6 +51,10 @@ export type Sale = {
   subtotal: number | null;
   total: number | null;
   paymentMethod: string | null;
+  /** Optional name taken at the counter. Null means not given. */
+  customerName: string | null;
+  /** Display name of the staff member who rang up the sale, from created_by. */
+  sellerName: string | null;
   status: 'completed' | 'voided';
   isHistorical: boolean;
   items: SaleItem[];
