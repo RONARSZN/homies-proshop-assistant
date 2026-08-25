@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
+import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.mjs';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.mjs';
 import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
 import Database from 'lucide-react/dist/esm/icons/database.mjs';
@@ -9,6 +10,7 @@ import Menu from 'lucide-react/dist/esm/icons/menu.mjs';
 import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Pin from 'lucide-react/dist/esm/icons/pin.mjs';
+import Plus from 'lucide-react/dist/esm/icons/plus.mjs';
 import Printer from 'lucide-react/dist/esm/icons/printer.mjs';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.mjs';
 import Search from 'lucide-react/dist/esm/icons/search.mjs';
@@ -21,7 +23,7 @@ import { LiveOverview } from './LiveOverview';
 import { activeSkuCount, attentionCount, formatPeso, inventoryValue, marginFor, reportingPeriod, saleTotal, statusFor, type Status } from './domain';
 import { shopRepository } from './repository';
 import { ShopDataProvider, useShopData } from './useShopData';
-import type { CartLine, Category, Note, Product, StockMovement } from './types';
+import type { CartLine, Category, Note, Product, ProductInput, StockMovement } from './types';
 
 const nav = [['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', Tag], ['/pos', 'POS', ShoppingCart], ['/notes', 'Notes', ClipboardList]] as const;
 const navigate = (path: string) => { window.history.pushState({}, '', path); window.dispatchEvent(new PopStateEvent('popstate')); };
@@ -52,6 +54,7 @@ function Router() {
   let page: ReactNode;
   if (path === '/') page = <LiveOverview />;
   else if (path === '/inventory') page = <Inventory />;
+  else if (path.startsWith('/inventory/category/')) page = <CategoryInventory id={decodeURIComponent(path.slice('/inventory/category/'.length))} />;
   else if (path.startsWith('/inventory/')) page = <ProductDetail id={decodeURIComponent(path.slice('/inventory/'.length))} />;
   else if (path === '/sales') page = <Sales />;
   else if (path.startsWith('/sales/')) page = <Transaction id={decodeURIComponent(path.slice('/sales/'.length))} />;
@@ -85,14 +88,48 @@ function ProductRows({ products }: { products: Product[] }) {
 
 function Inventory() {
   const { products, categories, loading, error } = useShopData();
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState('All categories');
+  const { profile } = useAuth();
+  const [adding, setAdding] = useState(false);
   if (loading) return <LoadingState/>;
   if (error) return <ErrorState error={error}/>;
-  const filtered = products.filter(product => `${product.name} ${product.sku} ${product.brand}`.toLowerCase().includes(query.toLowerCase()) && (category === 'All categories' || product.category === category));
-  const grouped = categories.map(item => ({ category: item, products: filtered.filter(product => product.categoryId === item.id) })).filter(group => group.products.length);
-  const uncategorised = filtered.filter(product => !categories.some(item => item.id === product.categoryId));
-  return <div className="content"><PageHead eyebrow="Operations · Inventory" title="Inventory control" copy={`${products.length} products · ${activeSkuCount(products)} with stock on hand.`}/><div className="inventory-summary"><div><span>Retail inventory value</span><strong>{formatPeso(inventoryValue(products))}</strong></div><div><span>Items on hand</span><strong>{products.reduce((sum, product) => sum + product.qty, 0)}</strong></div><div className="warn"><span>Need attention</span><strong>{attentionCount(products)}</strong></div><div><span>Categories</span><strong>{categories.length}</strong></div></div><div className="toolbar"><div className="search"><Search size={17}/><label className="sr-only" htmlFor="inventory-search">Search inventory</label><input id="inventory-search" placeholder="Search product, SKU, or brand…" value={query} onChange={event => setQuery(event.target.value)}/></div><label className="sr-only" htmlFor="inventory-category">Filter by category</label><select id="inventory-category" value={category} onChange={event => setCategory(event.target.value)}><option>All categories</option>{categories.map(item => <option key={item.id}>{item.name}</option>)}</select></div>{filtered.length === 0 ? <div className="empty-state"><Package size={24}/><strong>No inventory matches.</strong></div> : query ? <ProductRows products={filtered}/> : <div className="category-groups">{grouped.map(group => <details key={group.category.id} open><summary><span><strong>{group.category.name}</strong><small>{group.products.length} products</small></span><span>{group.products.reduce((sum, product) => sum + product.qty, 0)} on hand · {formatPeso(inventoryValue(group.products))}</span><ChevronDown size={16}/></summary><ProductRows products={group.products}/></details>)}{uncategorised.length > 0 && <details open><summary><span><strong>Uncategorised</strong><small>{uncategorised.length} products</small></span><span>{uncategorised.reduce((sum, product) => sum + product.qty, 0)} on hand</span><ChevronDown size={16}/></summary><ProductRows products={uncategorised}/></details>}</div>}<div className="table-footer"><span>Showing {filtered.length} of {products.length} products</span></div></div>;
+  const canManage = profile?.role === 'owner' || profile?.role === 'manager';
+  return <div className="content"><PageHead eyebrow="Operations · Inventory" title="Inventory categories" copy="Choose a category to view and manage its products." action={canManage && <button className="button button-primary" onClick={() => setAdding(value => !value)}><Plus size={16}/>{adding ? 'Close form' : 'Add new item'}</button>}/>{adding && <NewProductForm categories={categories} onCancel={() => setAdding(false)}/>}<div className="inventory-summary"><div><span>Retail inventory value</span><strong>{formatPeso(inventoryValue(products))}</strong></div><div><span>Items on hand</span><strong>{products.reduce((sum, product) => sum + product.qty, 0)}</strong></div><div className="warn"><span>Need attention</span><strong>{attentionCount(products)}</strong></div><div><span>Categories</span><strong>{categories.length}</strong></div></div><div className="category-catalog">{categories.map(category => { const items = products.filter(product => product.categoryId === category.id); const onHand = items.reduce((sum, product) => sum + product.qty, 0); return <button className="category-card" key={category.id} onClick={() => navigate(`/inventory/category/${category.id}`)}><span className="category-card-icon"><Boxes size={21}/></span><span className="category-card-copy"><strong>{friendlyCategory(category.name)}</strong><small>{items.length} products · {onHand} on hand</small></span><span className="category-card-value"><strong>{formatPeso(inventoryValue(items))}</strong><small>{attentionCount(items)} need attention</small></span><ArrowRight size={18}/></button>; })}</div></div>;
+}
+
+const friendlyCategory = (name: string) => name === 'BINDINGS' ? 'Boots / Bindings' : name === 'OUTWEAR' ? 'Outerwear' : name.charAt(0) + name.slice(1).toLowerCase();
+
+function CategoryInventory({ id }: { id: string }) {
+  const { products, categories, loading, error } = useShopData();
+  const { profile } = useAuth();
+  const [query, setQuery] = useState('');
+  const [adding, setAdding] = useState(false);
+  if (loading) return <LoadingState/>;
+  if (error) return <ErrorState error={error}/>;
+  const category = categories.find(item => item.id === id);
+  if (!category) return <NotFound title="Category not found" copy="That inventory category does not exist." back="/inventory"/>;
+  const items = products.filter(product => product.categoryId === id);
+  const filtered = items.filter(product => `${product.name} ${product.sku} ${product.brand}`.toLowerCase().includes(query.toLowerCase()));
+  const canManage = profile?.role === 'owner' || profile?.role === 'manager';
+  return <div className="content"><button className="back-link" onClick={() => navigate('/inventory')}>← Back to categories</button><PageHead eyebrow="Inventory · Category" title={friendlyCategory(category.name)} copy={`${items.length} products · ${items.reduce((sum, product) => sum + product.qty, 0)} on hand. Select an item to adjust stock or change its price.`} action={canManage && <button className="button button-primary" onClick={() => setAdding(value => !value)}><Plus size={16}/>{adding ? 'Close form' : 'Add new item'}</button>}/>{adding && <NewProductForm categories={categories} defaultCategoryId={category.id} onCancel={() => setAdding(false)}/>}<div className="category-summary"><div><span>Category value</span><strong>{formatPeso(inventoryValue(items))}</strong></div><div><span>Active SKUs</span><strong>{activeSkuCount(items)}</strong></div><div><span>Need attention</span><strong>{attentionCount(items)}</strong></div></div><div className="toolbar category-toolbar"><div className="search"><Search size={17}/><label className="sr-only" htmlFor="category-search">Search this category</label><input id="category-search" placeholder={`Search ${friendlyCategory(category.name).toLowerCase()}…`} value={query} onChange={event => setQuery(event.target.value)}/></div></div>{filtered.length ? <ProductRows products={filtered}/> : <div className="empty-state"><Package size={24}/><strong>No products match this search.</strong></div>}<div className="table-footer"><span>Showing {filtered.length} of {items.length} products</span></div></div>;
+}
+
+function NewProductForm({ categories, defaultCategoryId, onCancel }: { categories: Category[]; defaultCategoryId?: string; onCancel: () => void }) {
+  const { refresh } = useShopData();
+  const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const nullableText = (name: string) => String(form.get(name) || '').trim() || null;
+    const nullableNumber = (name: string) => { const value = String(form.get(name) || '').trim(); return value ? Number(value) : null; };
+    const openingQuantity = Number(form.get('openingQuantity') || 0);
+    if (!Number.isInteger(openingQuantity) || openingQuantity < 0) { setMessage('Opening quantity must be zero or a positive whole number.'); return; }
+    const values: ProductInput = { sku: String(form.get('sku') || '').trim(), name: String(form.get('name') || '').trim(), categoryId: String(form.get('category') || ''), brand: nullableText('brand'), size: nullableText('size'), color: nullableText('color'), cost: nullableNumber('cost'), price: nullableNumber('price'), supplier: nullableText('supplier'), received: nullableText('received'), openingQuantity };
+    setSaving(true);
+    setMessage('');
+    try { const productId = await shopRepository.createProduct(values); await refresh(); navigate(`/inventory/${productId}`); } catch (error) { setMessage(error instanceof Error ? error.message : 'Product could not be created.'); setSaving(false); }
+  }
+  return <Card title="Add new inventory item" meta="Manager or owner" wide><form className="product-form new-product-form" onSubmit={submit}><label>SKU<input name="sku" placeholder="Unique item code" required/></label><label>Product name<input name="name" placeholder="Exact product name" required/></label><label>Category<select name="category" defaultValue={defaultCategoryId || categories[0]?.id} required>{categories.map(item => <option key={item.id} value={item.id}>{friendlyCategory(item.name)}</option>)}</select></label><label>Brand<input name="brand" placeholder="Optional"/></label><label>Size<input name="size" placeholder="Optional"/></label><label>Colour<input name="color" placeholder="Optional"/></label><label>Unit cost<input name="cost" type="number" min="0.01" step="0.01" placeholder="Optional"/></label><label>Selling price<input name="price" type="number" min="0.01" step="0.01" placeholder="Optional"/></label><label>Supplier<input name="supplier" placeholder="Optional"/></label><label>Date received<input name="received" type="date"/></label><label>Opening quantity<input name="openingQuantity" type="number" min="0" step="1" defaultValue="0" required/></label><div className="form-actions"><button type="button" className="button button-dark" onClick={onCancel}>Cancel</button><button className="button button-primary" disabled={saving}>{saving ? 'Adding item…' : 'Add item'}</button></div></form>{message && <p className="form-error" role="alert">{message}</p>}</Card>;
 }
 
 function ProductDetail({ id }: { id: string }) {

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { CartLine, Category, Product, Sale, StockMovement } from './types';
+import type { CartLine, Category, Product, ProductInput, Sale, StockMovement } from './types';
 
 type ProductRow = {
   id: string; sku: string; name: string; category_id: string; brand: string | null;
@@ -31,7 +31,8 @@ export interface ShopRepository {
   getLastRefresh(): string;
   getMovements(productId: string): Promise<StockMovement[]>;
   addMovement(productId: string, delta: number, reason: StockMovement['reason'], note: string | null): Promise<void>;
-  updateProduct(productId: string, values: { sku: string; name: string; categoryId: string; brand: string | null; size: string | null; color: string | null; cost: number | null; price: number | null; supplier: string | null; received: string | null; isActive: boolean }): Promise<void>;
+  createProduct(values: ProductInput): Promise<string>;
+  updateProduct(productId: string, values: Omit<ProductInput, 'openingQuantity'> & { isActive: boolean }): Promise<void>;
   completeSale(lines: CartLine[], orderDiscount: number, paymentMethod: string): Promise<string>;
   voidSale(saleId: string): Promise<void>;
 }
@@ -130,6 +131,24 @@ export const shopRepository: ShopRepository = {
   async addMovement(productId, delta, reason, note) {
     const { error } = await supabase.from('stock_movements').insert({ product_id: productId, delta, reason, note: note || null });
     fail('Stock movement could not be saved', error);
+  },
+
+  async createProduct(values) {
+    const { data, error } = await supabase.rpc('create_product', {
+      p_sku: values.sku,
+      p_name: values.name,
+      p_category_id: values.categoryId,
+      p_brand: values.brand,
+      p_size: values.size,
+      p_colour: values.color,
+      p_unit_cost: values.cost,
+      p_selling_price: values.price,
+      p_supplier: values.supplier,
+      p_received_at: values.received,
+      p_opening_quantity: values.openingQuantity,
+    });
+    fail('Product could not be created', error);
+    return String(data);
   },
 
   async updateProduct(productId, values) {

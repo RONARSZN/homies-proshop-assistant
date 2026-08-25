@@ -66,4 +66,18 @@ export type StockMovement = {
 
 export type CartLine = { productId: string; qty: number; unitPrice: number; discount: number };
 
+export type ProductInput = {
+  sku: string;
+  name: string;
+  categoryId: string;
+  brand: string | null;
+  size: string | null;
+  color: string | null;
+  cost: number | null;
+  price: number | null;
+  supplier: string | null;
+  received: string | null;
+  openingQuantity: number;
+};
+
 export type Note = { id: number; text: string; date: string; pinned: boolean; archived: boolean };
