@@ -224,6 +224,29 @@ button { cursor: pointer; }
   color: var(--ink); font-size: 15px; min-height: 48px;
 }
 .search input::placeholder { color: #9A958A; }
+.search-clear {
+  width: 44px; height: 44px; flex: none; margin-right: -8px;
+  display: grid; place-items: center; border: 0; border-radius: var(--r-pill);
+  background: transparent; color: var(--muted);
+}
+.search-clear:hover { background: var(--surface-2); color: var(--ink); }
+
+.result-note { font-size: 13px; color: var(--ink-2); margin: 0 2px 14px; }
+
+/* Missing source data is stated, never blank and never a fake zero. */
+.not-captured {
+  display: inline-flex; align-items: center; margin-top: 5px;
+  border: 1px dashed var(--dash); color: var(--muted);
+  border-radius: var(--r-pill); padding: 5px 11px;
+  font-size: 12px; font-weight: 600;
+}
+
+.group-category {
+  display: inline-flex; align-items: center; margin-bottom: 12px;
+  background: var(--surface-2); color: var(--ink-2);
+  border-radius: var(--r-pill); padding: 5px 11px;
+  font: 500 11px var(--mono); letter-spacing: 0.06em; text-transform: uppercase;
+}
 
 /* ------------------------------------------------ category catalogue */
 
@@ -250,6 +273,7 @@ button { cursor: pointer; }
 
 .product-group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
 .product-year-list { display: grid; gap: 28px; }
+.product-year-section { display: block; min-width: 0; }
 .product-year-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; padding: 0 4px; }
 .product-year-head h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.04em; }
 .product-year-head span { font: 400 11px var(--mono); color: var(--muted); }
@@ -592,14 +616,16 @@ button { cursor: pointer; }
     background: var(--surface); box-shadow: 0 8px 26px rgba(16, 17, 16, 0.16);
     padding-bottom: calc(7px + env(safe-area-inset-bottom));
   }
+  /* Labels stay visible on every destination. Icon-only navigation is
+     guesswork, and this is used mid-sale by staff who did not set it up. */
   .mobile-bottom button {
-    flex: 1; min-width: 0; height: 44px; border: 0; border-radius: var(--r-pill);
+    flex: 1; min-width: 0; height: 52px; border: 0; border-radius: 16px;
     background: transparent; color: var(--muted);
-    display: flex; align-items: center; justify-content: center; gap: 6px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   }
-  .mobile-bottom button span { display: none; font-size: 13px; font-weight: 700; }
-  .mobile-bottom button.active { background: var(--ink); color: var(--paper); flex: 1.9; }
-  .mobile-bottom button.active span { display: inline; }
+  .mobile-bottom button span { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .mobile-bottom button.active { background: var(--ink); color: var(--paper); }
+  .mobile-bottom button.active span { font-weight: 700; }
 }
 
 @media (max-width: 420px) {
