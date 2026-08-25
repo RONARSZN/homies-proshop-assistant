@@ -249,6 +249,10 @@ button { cursor: pointer; }
 /* --------------------------------------------------- product groups */
 
 .product-group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.product-year-list { display: grid; gap: 28px; }
+.product-year-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; padding: 0 4px; }
+.product-year-head h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.04em; }
+.product-year-head span { font: 400 11px var(--mono); color: var(--muted); }
 .product-group-card { background: var(--surface); border-radius: var(--r-card); padding: 18px; }
 .product-group-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .product-group-head strong { display: block; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; }
