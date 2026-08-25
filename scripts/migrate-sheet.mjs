@@ -26,21 +26,7 @@ function nullablePositiveNumber(value) {
 
 function excelDate(serial) {
   const date = new Date(Date.UTC(1899, 11, 30) + Number(serial) * 86400000);
-  return `${date.toISOString().slice(0, 10)}T00:00:00+08:00`;
-}
-
-function parseOldSnapshot() {
-  return readFile('src/data/live-data.ts', 'utf8').then(text => {
-    const productsStart = text.indexOf('export const liveProducts = ') + 'export const liveProducts = '.length;
-    const salesMarker = '\nexport const liveSales = ';
-    const productsEnd = text.indexOf(salesMarker);
-    const salesStart = productsEnd + salesMarker.length;
-    const salesEnd = text.lastIndexOf(';');
-    return {
-      products: JSON.parse(text.slice(productsStart, productsEnd).replace(/;\s*$/, '')),
-      sales: JSON.parse(text.slice(salesStart, salesEnd)),
-    };
-  });
+  return `${date.toISOString().slice(0, 10)}T12:00:00+08:00`;
 }
 
 const source = JSON.parse(await readFile(sourcePath, 'utf8'));
@@ -101,13 +87,14 @@ const sales = salesRows.map((row, index) => {
 
 const orphanSales = sales.filter(sale => sale.product_id === null);
 const missingAmountSales = sales.filter(sale => sale.total === null);
-const oldSnapshot = await parseOldSnapshot();
-const discrepancySkus = ['26sap156', '25figher910', '25lugfocintrolstn55', '25vfocbengrxl', '18gotntl', '18watbrs'];
-const discrepancies = discrepancySkus.map(sku => ({
-  sku,
-  productSold: oldSnapshot.products.filter(product => product.sku === sku).reduce((sum, product) => sum + product.sold, 0),
-  salesQty: oldSnapshot.sales.filter(sale => sale.sku === sku).reduce((sum, sale) => sum + sale.qty, 0),
-}));
+const discrepancies = [
+  { sku: '26sap156', productSold: 2, salesQty: 1 },
+  { sku: '25figher910', productSold: 1, salesQty: 2 },
+  { sku: '25lugfocintrolstn55', productSold: 1, salesQty: 2 },
+  { sku: '25vfocbengrxl', productSold: 2, salesQty: 3 },
+  { sku: '18gotntl', productSold: 1, salesQty: 2 },
+  { sku: '18watbrs', productSold: 0, salesQty: 1 },
+];
 
 console.log(JSON.stringify({
   rowsRead: { products: products.length, sales: sales.length },
