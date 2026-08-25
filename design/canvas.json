@@ -1,0 +1,15 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 520, "h": 1180, "title": "Design system" },
+    { "file": "Overview.dc.html", "x": 620, "y": 0, "w": 390, "h": 844 },
+    { "file": "Inventory.dc.html", "x": 1070, "y": 0, "w": 390, "h": 844 },
+    { "file": "Detail.dc.html", "x": 1520, "y": 0, "w": 390, "h": 844 },
+    { "file": "POS.dc.html", "x": 1970, "y": 0, "w": 390, "h": 844 }
+  ],
+  "annotations": [
+    { "id": "note-density", "x": 1070, "y": -150, "w": 390, "text": "Compact density.\nConsumer-fintech air would make a 354-row list unusable — rows here are 56px, still above the 44px target." },
+    { "id": "note-red", "x": 620, "y": -150, "w": 390, "text": "Red discipline.\n224 of 354 SKUs are out of stock — that is the resting state, so it reads grey. Red marks the 9 selling items down to 1-2 units, and one action per screen." },
+    { "id": "note-missing", "x": 1520, "y": -150, "w": 390, "text": "Unknown is designed, not blank.\nCost is missing on all 354 rows. The dashed chip says so out loud instead of printing a fake zero." }
+  ],
+  "launch": { "view": "canvas" }
+}

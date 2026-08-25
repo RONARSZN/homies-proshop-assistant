@@ -6,7 +6,6 @@ import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.mjs';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.mjs';
 import { activeSkuCount, attentionCount, bestSellers, formatPeso, inventoryValue, productsWithZeroPriceInStock, reportingPeriod, saleTotal, statusFor } from './domain';
 import { useShopData } from './useShopData';
-import './live.css';
 
 function Metric({ label, value, detail, Icon }: { label: string; value: string; detail: string; Icon: typeof Boxes }) {
   return <div className="kpi"><div className="kpi-top"><span>{label}</span><Icon size={16}/></div><strong>{value}</strong><div className="kpi-detail">{detail}</div></div>;

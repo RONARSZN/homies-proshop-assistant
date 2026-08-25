@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Manrope, ui-sans-serif, system-ui, sans-serif; background: #EDE8DE; }
+    a { color: #d9322b; } a:hover { color: #b3271f; }
+  </style>
+</helmet>
+<div style="width: 520px; background: #EDE8DE; padding: 28px 24px 40px; box-sizing: border-box; color: #101110;">
+
+  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+    <div style="width: 30px; height: 30px; background: {{accent}}; color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 17px; letter-spacing: -0.06em; border-radius: 8px;">H</div>
+    <div>
+      <div style="font-size: 13px; font-weight: 800; letter-spacing: 0.01em;">#HOMIES</div>
+      <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 10px; color: #7C776C; letter-spacing: 0.1em;">PRO SHOP / OPS</div>
+    </div>
+  </div>
+  <h1 style="font-size: 30px; letter-spacing: -0.045em; margin: 14px 0 6px; font-weight: 800;">Counter-first</h1>
+  <p style="font-size: 14px; line-height: 1.5; color: #55524A; margin: 0 0 26px; max-width: 42ch; text-wrap: pretty;">Light canvas, black tiles, one red. Built for a bright counter, wet hands, and a customer waiting.</p>
+
+  <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; letter-spacing: 0.12em; margin-bottom: 12px;">PALETTE</div>
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px;">
+    <sc-for list="{{swatches}}" as="s" hint-placeholder-count="4">
+      <div>
+        <div style="height: 56px; border-radius: 12px; background: {{s.hex}}; border: 1px solid rgba(16,17,16,0.10);"></div>
+        <div style="font-size: 12px; font-weight: 700; margin-top: 7px;">{{s.name}}</div>
+        <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 10px; color: #7C776C; margin-top: 2px;">{{s.hex}}</div>
+      </div>
+    </sc-for>
+  </div>
+  <p style="font-size: 12px; line-height: 1.5; color: #55524A; margin: 0 0 26px;">Red is rationed: one primary action per screen, plus genuine exceptions. Never decoration.</p>
+
+  <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; letter-spacing: 0.12em; margin-bottom: 12px;">TYPE</div>
+  <div style="background: #F7F4EE; border-radius: 16px; padding: 18px; margin-bottom: 26px;">
+    <div style="font-size: 34px; font-weight: 800; letter-spacing: -0.055em; font-variant-numeric: tabular-nums;">₱3,005,000</div>
+    <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; letter-spacing: 0.1em; margin: 4px 0 16px;">HERO NUMERAL / MANROPE 800 / -5.5%</div>
+    <div style="display: grid; gap: 9px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #E2DCD0; padding-top: 9px;"><span style="font-size: 16px; font-weight: 700;">Section head</span><span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C;">16 / 700</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #E2DCD0; padding-top: 9px;"><span style="font-size: 14px;">Body and row titles</span><span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C;">14 / 400</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #E2DCD0; padding-top: 9px;"><span style="font-size: 12px; color: #55524A;">Labels, never smaller</span><span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C;">12 / 500</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #E2DCD0; padding-top: 9px;"><span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 13px;">26sap148</span><span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C;">DM MONO / SKUs ONLY</span></div>
+    </div>
+  </div>
+
+  <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; letter-spacing: 0.12em; margin-bottom: 12px;">STATUS — OUT OF STOCK IS THE RESTING STATE, NOT AN ALARM</div>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+    <div style="display: inline-flex; align-items: center; gap: 7px; background: rgba(103,180,140,0.16); color: #2F6B4C; border-radius: 999px; padding: 8px 13px; font-size: 12px; font-weight: 600;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #4E9B72;"></span>In stock</div>
+    <div style="display: inline-flex; align-items: center; gap: 7px; background: rgba(216,168,68,0.20); color: #7A5A15; border-radius: 999px; padding: 8px 13px; font-size: 12px; font-weight: 600;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #C8961F;"></span>Low stock</div>
+    <div style="display: inline-flex; align-items: center; gap: 7px; background: rgba(16,17,16,0.06); color: #7C776C; border-radius: 999px; padding: 8px 13px; font-size: 12px; font-weight: 600;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #A9A498;"></span>Out of stock</div>
+    <div style="display: inline-flex; align-items: center; gap: 7px; border: 1px dashed #B9B2A3; color: #7C776C; border-radius: 999px; padding: 7px 13px; font-size: 12px; font-weight: 600;">Not captured</div>
+  </div>
+  <p style="font-size: 12px; line-height: 1.5; color: #55524A; margin: 0 0 26px;">224 of 354 rows are out of stock. Red there would make the whole list an emergency. The dashed chip marks missing cost, supplier and received dates — deliberate, not broken.</p>
+
+  <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; letter-spacing: 0.12em; margin-bottom: 12px;">PRODUCT PHOTOS &mdash; EMPTY IS THE COMMON CASE</div>
+  <div style="display: flex; gap: 14px; align-items: flex-start; margin-bottom: 10px;">
+    <div style="text-align: center;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; background: #E0D8C8; display: grid; place-items: center;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B8171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c2.5 3 3.6 6.4 3.6 10S14.5 19 12 22c-2.5-3-3.6-6.4-3.6-10S9.5 5 12 2Z"/><path d="M8.6 12h6.8"/></svg>
+      </div>
+      <div style="font-size: 11px; color: #7C776C; margin-top: 6px;">40px row</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="width: 40px; height: 40px; border-radius: 10px; border: 1px dashed #B9B2A3; display: grid; place-items: center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A9A498" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div style="font-size: 11px; color: #7C776C; margin-top: 6px;">no photo</div>
+    </div>
+    <div style="text-align: center;">
+      <div style="width: 88px; height: 88px; border-radius: 18px; border: 1px dashed #B9B2A3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#A9A498" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span style="font-size: 11px; font-weight: 700; color: #7C776C;">Add photo</span>
+      </div>
+      <div style="font-size: 11px; color: #7C776C; margin-top: 6px;">88px detail</div>
+    </div>
+  </div>
+  <p style="font-size: 12px; line-height: 1.5; color: #55524A; margin: 0 0 26px;">All 354 SKUs start with no photo, so the empty state is the design &mdash; a dashed tile that invites a capture, never a broken-image box. Status rides as a dot on the thumbnail corner.</p>
+
+  <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; letter-spacing: 0.12em; margin-bottom: 12px;">TWO DENSITIES, ONE LANGUAGE</div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;">
+    <div>
+      <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px;">Comfortable</div>
+      <div style="background: #F7F4EE; border-radius: 16px; padding: 14px;">
+        <div style="display: flex; align-items: center; gap: 11px;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(16,17,16,0.06); display: grid; place-items: center; flex: none;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#55524A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/></svg>
+          </div>
+          <div style="min-width: 0; flex: 1;">
+            <div style="font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">2026 PROGRAM</div>
+            <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; margin-top: 3px;">26pro910</div>
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 12px;">
+          <span style="font-size: 12px; color: #55524A;">On hand</span>
+          <span style="font-size: 20px; font-weight: 800; letter-spacing: -0.04em; font-variant-numeric: tabular-nums;">4</span>
+        </div>
+      </div>
+      <div style="font-size: 12px; color: #55524A; margin-top: 8px; line-height: 1.45;">Dashboard, product detail, POS totals.</div>
+    </div>
+    <div>
+      <div style="font-size: 12px; font-weight: 700; margin-bottom: 8px;">Compact</div>
+      <div style="background: #F7F4EE; border-radius: 16px; padding: 4px 12px;">
+        <sc-for list="{{compactRows}}" as="r" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid #E9E3D8;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: {{r.dot}}; flex: none;"></span>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{r.name}}</div>
+              <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 10px; color: #7C776C; margin-top: 2px;">{{r.sku}}</div>
+            </div>
+            <span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 14px; font-weight: 500; font-variant-numeric: tabular-nums;">{{r.qty}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="font-size: 12px; color: #55524A; margin-top: 8px; line-height: 1.45;">354-row inventory, sales log, movement ledger.</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 26px; background: #101110; border-radius: 18px; padding: 18px;">
+    <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #8E897D; letter-spacing: 0.12em; margin-bottom: 10px;">NON-NEGOTIABLES</div>
+    <div style="display: grid; gap: 9px; color: #F4EFE6; font-size: 13px; line-height: 1.5;">
+      <div>44px minimum touch target — 56px for POS actions.</div>
+      <div>Every screen has exactly one red action.</div>
+      <div>A missing value shows the dashed chip. Never blank, never ₱0.</div>
+      <div>Radii: 20px cards, 12px tiles, full pill on controls.</div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#d9322b","section":"Brand"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#d9322b';
+    return {
+      accent,
+      swatches: [
+        { name: 'Canvas', hex: '#EDE8DE' },
+        { name: 'Surface', hex: '#F7F4EE' },
+        { name: 'Ink', hex: '#101110' },
+        { name: 'Red', hex: accent }
+      ],
+      compactRows: [
+        { name: '2026 DUP Sapparod Pro', sku: '26sap148', qty: '4', dot: '#C8961F' },
+        { name: 'Triple 8 Halo Water Helmet White', sku: '18watwgm', qty: '6', dot: '#4E9B72' },
+        { name: '2025 FOCAL - Onefive - Slate', sku: '25wetfocsltm', qty: '2', dot: '#C8961F' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

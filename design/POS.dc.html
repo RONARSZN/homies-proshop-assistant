@@ -1,0 +1,107 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Manrope, ui-sans-serif, system-ui, sans-serif; background: #EDE8DE; }
+    a { color: #d9322b; } a:hover { color: #b3271f; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #EDE8DE; box-sizing: border-box; color: #101110; position: relative; overflow: hidden;">
+
+  <div style="padding: 62px 20px 0;">
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <h1 style="font-size: 24px; font-weight: 800; letter-spacing: -0.04em; margin: 0;">Counter sale</h1>
+        <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; letter-spacing: 0.06em; margin-top: 5px;">STAFF &middot; JHUN</div>
+      </div>
+      <div style="height: 44px; padding: 0 16px; border-radius: 999px; background: rgba(16,17,16,0.06); color: #55524A; display: flex; align-items: center; font-size: 13px; font-weight: 700;">Clear</div>
+    </div>
+
+    <div style="margin-top: 14px; background: #F7F4EE; border-radius: 999px; height: 50px; display: flex; align-items: center; gap: 10px; padding: 0 16px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C776C" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <span style="font-size: 15px; color: #9A958A;">Scan or search to add</span>
+    </div>
+  </div>
+
+  <div style="padding: 14px 20px 0;">
+    <div style="display: grid; gap: 8px;">
+      <sc-for list="{{lines}}" as="l" hint-placeholder-count="3">
+        <div style="background: #F7F4EE; border-radius: 18px; padding: 14px;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;">
+            <div style="width: 40px; height: 40px; flex: none; border-radius: 10px; background: #E0D8C8; display: grid; place-items: center;">
+              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8B8171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c2.5 3 3.6 6.4 3.6 10S14.5 19 12 22c-2.5-3-3.6-6.4-3.6-10S9.5 5 12 2Z"/><path d="M8.6 12h6.8"/></svg>
+            </div>
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-size: 14px; font-weight: 700; line-height: 1.3;">{{l.name}}</div>
+              <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 10px; color: #7C776C; margin-top: 4px;">{{l.sku}} &middot; {{l.size}}</div>
+            </div>
+            <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 15px; font-weight: 500; flex: none; font-variant-numeric: tabular-nums;">{{l.total}}</div>
+          </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <div style="width: 44px; height: 44px; border-radius: 999px; background: #E4DED1; display: grid; place-items: center;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#101110" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+              </div>
+              <div style="min-width: 44px; text-align: center; font-family: 'DM Mono', ui-monospace, monospace; font-size: 17px; font-weight: 500;">{{l.qty}}</div>
+              <div style="width: 44px; height: 44px; border-radius: 999px; background: #E4DED1; display: grid; place-items: center;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#101110" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              </div>
+            </div>
+            <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 12px; color: #7C776C;">{{l.unit}} each &middot; {{l.left}} left</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 20px 26px; background: #101110; border-radius: 28px 28px 0 0;">
+    <div style="display: flex; align-items: baseline; justify-content: space-between;">
+      <span style="font-size: 13px; color: #B9B4A8;">Subtotal</span>
+      <span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 15px; color: #F4EFE6; font-variant-numeric: tabular-nums;">₱53,000</span>
+    </div>
+    <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 9px;">
+      <span style="font-size: 13px; color: #B9B4A8;">Rider discount</span>
+      <span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 15px; color: {{accent}}; font-variant-numeric: tabular-nums;">&minus; ₱2,650</span>
+    </div>
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; border-top: 1px solid #26241F; margin-top: 14px; padding-top: 14px;">
+      <span style="font-size: 13px; color: #B9B4A8;">Total</span>
+      <span style="font-size: 34px; font-weight: 800; color: #F4EFE6; letter-spacing: -0.055em; line-height: 1; font-variant-numeric: tabular-nums;">₱50,350</span>
+    </div>
+
+    <div style="display: flex; gap: 7px; margin-top: 16px;">
+      <div style="flex: 1; height: 44px; border-radius: 999px; background: #F4EFE6; color: #101110; display: grid; place-items: center; font-size: 13px; font-weight: 800;">Cash</div>
+      <div style="flex: 1; height: 44px; border-radius: 999px; border: 1px solid #3A3833; color: #B9B4A8; display: grid; place-items: center; font-size: 13px; font-weight: 700;">GCash</div>
+      <div style="flex: 1; height: 44px; border-radius: 999px; border: 1px solid #3A3833; color: #B9B4A8; display: grid; place-items: center; font-size: 13px; font-weight: 700;">Card</div>
+    </div>
+
+    <div style="height: 62px; border-radius: 999px; background: {{accent}}; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 17px; font-weight: 800; margin-top: 12px; letter-spacing: -0.01em;">
+      Complete sale
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#d9322b","section":"Brand"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      accent: this.props.accent ?? '#d9322b',
+      lines: [
+        { name: '2026 DUP Sapparod Pro', sku: '26sap148', size: '148', qty: '1', unit: '₱37,000', total: '₱37,000', left: '3' },
+        { name: '2025 FOCAL - Onefive - Slate', sku: '25wetfocsltm', size: 'M', qty: '1', unit: '₱14,000', total: '₱14,000', left: '1' },
+        { name: 'Triple 8 Halo Water Helmet White', sku: '18watwgm', size: 'M', qty: '1', unit: '₱2,000', total: '₱2,000', left: '5' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

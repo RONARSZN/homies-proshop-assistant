@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Manrope, ui-sans-serif, system-ui, sans-serif; background: #EDE8DE; }
+    a { color: #d9322b; } a:hover { color: #b3271f; }
+  </style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #EDE8DE; box-sizing: border-box; color: #101110; position: relative; overflow: hidden;">
+
+  <div style="padding: 62px 20px 0;">
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="width: 44px; height: 44px; border-radius: 999px; background: #F7F4EE; display: grid; place-items: center; flex: none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#101110" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </div>
+      <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 11px; color: #7C776C; letter-spacing: 0.1em;">WAKEBOARDS</div>
+    </div>
+
+    <div style="display: flex; gap: 14px; align-items: flex-start; margin-top: 18px;">
+      <div style="width: 88px; height: 88px; flex: none; border-radius: 18px; border: 1px dashed #B9B2A3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#A9A498" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span style="font-size: 11px; font-weight: 700; color: #7C776C;">Add photo</span>
+      </div>
+      <div style="min-width: 0; flex: 1;">
+        <h1 style="font-size: 22px; font-weight: 800; letter-spacing: -0.04em; margin: 0 0 6px; line-height: 1.16;">2025 FOCAL &mdash; Onefive Slate</h1>
+        <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 13px; color: #55524A;">25wetfocsltm &middot; Size M</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 14px 20px 0;">
+    <div style="background: rgba(217,50,43,0.10); border: 1px solid rgba(217,50,43,0.30); border-radius: 16px; padding: 13px 14px; display: flex; gap: 11px; align-items: flex-start;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 1px;"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+      <div style="min-width: 0;">
+        <div style="font-size: 13px; font-weight: 800; color: #A32820;">Two products share this SKU</div>
+        <div style="font-size: 12px; color: #6B3630; margin-top: 4px; line-height: 1.45;">Onefive <b>Slate</b> (2 on hand) and Onefive <b>Stone</b> (3 on hand). Fix in the source before selling either.</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 12px 20px 0;">
+    <div style="background: #101110; border-radius: 22px; padding: 20px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between;">
+        <div>
+          <div style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 10px; color: #8E897D; letter-spacing: 0.12em;">ON HAND</div>
+          <div style="font-size: 56px; font-weight: 800; color: #F4EFE6; letter-spacing: -0.06em; line-height: 1; margin-top: 8px; font-variant-numeric: tabular-nums;">2</div>
+        </div>
+        <div style="display: inline-flex; align-items: center; gap: 7px; background: rgba(216,168,68,0.18); color: #E0B457; border-radius: 999px; padding: 8px 13px; font-size: 12px; font-weight: 700;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #E0B457;"></span>Low stock</div>
+      </div>
+      <div style="border-top: 1px solid #26241F; margin-top: 18px; padding-top: 15px; display: flex; align-items: baseline; justify-content: space-between;">
+        <span style="font-size: 13px; color: #B9B4A8;">Selling price</span>
+        <span style="font-size: 22px; font-weight: 800; color: #F4EFE6; letter-spacing: -0.04em; font-variant-numeric: tabular-nums;">₱14,000</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding: 12px 20px 0;">
+    <div style="background: #F7F4EE; border-radius: 20px; padding: 6px 16px;">
+      <sc-for list="{{fields}}" as="f" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 50px; padding: 8px 0; border-bottom: 1px solid #E9E3D8;">
+          <span style="font-size: 13px; color: #55524A;">{{f.label}}</span>
+          <sc-if value="{{f.missing}}" hint-placeholder-val="{{true}}">
+            <span style="display: inline-flex; align-items: center; border: 1px dashed #B9B2A3; color: #7C776C; border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600;">Not captured</span>
+          </sc-if>
+          <sc-if value="{{f.present}}" hint-placeholder-val="{{true}}">
+            <span style="font-family: 'DM Mono', ui-monospace, monospace; font-size: 14px; font-weight: 500;">{{f.value}}</span>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    <p style="font-size: 12px; color: #55524A; line-height: 1.5; margin: 11px 2px 0;">Cost has never been captured for any SKU, so margin cannot be shown. The chip says that out loud instead of printing ₱0.</p>
+  </div>
+
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 0 20px 26px; display: flex; gap: 10px; background: linear-gradient(to top, #EDE8DE 62%, rgba(237,232,222,0));">
+    <div style="flex: none; width: 56px; height: 56px; border-radius: 999px; background: #F7F4EE; display: grid; place-items: center;">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#101110" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    </div>
+    <div style="flex: 1; height: 56px; border-radius: 999px; background: {{accent}}; color: #fff; display: flex; align-items: center; justify-content: center; gap: 9px; font-size: 15px; font-weight: 800; box-shadow: 0 6px 22px rgba(217,50,43,0.30);">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+      Add to sale
+    </div>
+  </div>
+
+</div>
+</x-dc>
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#d9322b","section":"Brand"}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const raw = [
+      { label: 'Unit cost', value: null },
+      { label: 'Margin', value: null },
+      { label: 'Supplier', value: null },
+      { label: 'Received', value: null },
+      { label: 'Sold to date', value: '3' }
+    ];
+    return {
+      accent: this.props.accent ?? '#d9322b',
+      fields: raw.map(f => ({ ...f, missing: f.value === null, present: f.value !== null }))
+    };
+  }
+}
+</script>
+</body>
+</html>
