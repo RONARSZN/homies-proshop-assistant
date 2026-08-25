@@ -5,11 +5,13 @@ import type { Product, Sale } from './types';
 export interface ShopRepository {
   getProducts(): Promise<Product[]>;
   getSales(): Promise<Sale[]>;
+  getCategories(): Promise<string[]>;
   getSnapshotDate(): string;
 }
 
 export const shopRepository: ShopRepository = {
   async getProducts() { return liveProducts.map(product => ({ ...product, cost: product.cost === 0 ? null : product.cost })); },
   async getSales() { return liveSales.map(sale => ({ ...sale })); },
+  async getCategories() { return [...new Set(liveProducts.map(product => product.category))].sort(); },
   getSnapshotDate() { return snapshotDate; },
 };
