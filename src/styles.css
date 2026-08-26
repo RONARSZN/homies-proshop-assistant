@@ -579,6 +579,50 @@ button { cursor: pointer; }
 .bar-value small { font-size: 12px; color: var(--muted); font-weight: 400; }
 .chart-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
 
+
+/* ------------------------------------------- expanded chart list */
+
+.expand-button {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  min-height: 44px; padding: 0 12px; border-radius: var(--r-pill);
+  border: 1px solid var(--line-2); background: var(--surface-2); color: var(--ink-2);
+  font-size: 12px; font-weight: 700;
+}
+.expand-button:hover { background: var(--line-2); color: var(--ink); }
+
+.sheet-backdrop {
+  position: fixed; inset: 0; z-index: 40;
+  display: grid; place-items: center; padding: 20px;
+  background: rgba(16, 17, 16, 0.45); backdrop-filter: blur(3px);
+}
+.sheet {
+  width: min(560px, 100%); max-height: min(78vh, 720px);
+  display: flex; flex-direction: column;
+  background: var(--surface); border-radius: var(--r-card); padding: 20px;
+}
+.sheet-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+.sheet-head h2 { font-size: 17px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 4px; }
+.sheet-head span { font: 400 11px var(--mono); color: var(--muted); }
+.sheet-close {
+  width: 44px; height: 44px; flex: none; display: grid; place-items: center;
+  border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted);
+}
+.sheet-close:hover { background: var(--surface-2); color: var(--ink); }
+
+.sheet-list { overflow-y: auto; display: grid; padding-right: 6px; }
+.sheet-list > div {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 12px;
+  align-items: center; padding: 11px 0; border-top: 1px solid var(--line);
+}
+.sheet-list > div:first-child { border-top: 0; }
+.sheet-name { min-width: 0; }
+.sheet-name strong { display: block; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.sheet-name small { display: block; font: 400 12px var(--mono); color: var(--muted); margin-top: 3px; }
+/* min-width so a 1-unit row and a 10-unit row align down the column. */
+.sheet-qty { text-align: right; flex: none; min-width: 46px; }
+.sheet-qty strong { display: block; font: 500 16px var(--mono); font-variant-numeric: tabular-nums; }
+.sheet-qty small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+
 /* --------------------------------------------------------- notes */
 
 .notes-layout { max-width: 900px; }
@@ -718,7 +762,7 @@ button { cursor: pointer; }
 /* ----------------------------------------------------------- print */
 
 @media print {
-  .no-print, .sidebar, .topbar, .mobile-bottom { display: none !important; }
+  .no-print, .sidebar, .topbar, .mobile-bottom, .sheet-backdrop { display: none !important; }
   body, .app-shell, .main, .content { background: #fff; }
   .print-receipt .card { background: #fff; border: 1px solid #ddd; }
 }
