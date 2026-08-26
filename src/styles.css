@@ -140,6 +140,17 @@ button { cursor: pointer; }
 .eyebrow { font: 500 11px var(--mono); color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; margin-bottom: 24px; }
 .page-head h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.045em; margin: 10px 0 6px; }
+.title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* Replaces the old source banner: the same fact, one line instead of a card.
+   It also covers mobile, where the topbar sync dot is hidden. */
+.live-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  border-radius: var(--r-pill); padding: 4px 10px;
+  background: var(--surface-2); color: var(--ink-2);
+  font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.live-pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex: none; }
 .page-head p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.5; max-width: 62ch; text-wrap: pretty; }
 
 .back-link {
@@ -611,15 +622,6 @@ button { cursor: pointer; }
 
 /* ------------------------------------------------------- overview */
 
-.source-banner {
-  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
-  background: var(--ink); border-radius: 18px; padding: 15px 18px; color: var(--paper);
-}
-.source-banner svg { color: var(--green); flex: none; }
-.source-banner > span { flex: 1; min-width: 0; }
-.source-banner strong { display: block; font-size: 14px; font-weight: 700; }
-.source-banner small { display: block; font-size: 12px; color: var(--on-ink-2); margin-top: 3px; }
-.source-banner b { font: 500 11px var(--mono); color: var(--on-ink-3); letter-spacing: 0.08em; text-transform: uppercase; flex: none; }
 
 .rank-list { display: grid; }
 .live-rank { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }

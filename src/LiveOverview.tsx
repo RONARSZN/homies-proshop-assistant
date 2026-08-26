@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
 import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
-import Database from 'lucide-react/dist/esm/icons/database.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Tag from 'lucide-react/dist/esm/icons/tag.mjs';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.mjs';
@@ -82,7 +81,7 @@ export function LiveOverview() {
     <div className="page-head">
       <div>
         <div className="eyebrow">Live operations · {lastRefresh ? new Date(lastRefresh).toLocaleString('en-PH') : 'connected'}</div>
-        <h1>{monthLabel}</h1>
+        <div className="title-row"><h1>{monthLabel}</h1><span className="live-pill"><i/>Live data</span></div>
         <p>Sales figures follow the period below. Stock figures are always current.</p>
       </div>
       <label className="period-select">
@@ -98,8 +97,6 @@ export function LiveOverview() {
         </select>
       </label>
     </div>
-
-    <div className="source-banner"><Database size={15}/><span><strong>Supabase operational database</strong><small>Inventory, sales, and stock ledger refresh together.</small></span><b>Live data</b></div>
 
     <div className="kpi-grid">
       <Metric label={`Revenue · ${monthLabel}`} value={formatPeso(month.revenue)} detail={`Average sale ${averageSale}`} Icon={TrendingUp}/>
