@@ -30,8 +30,8 @@ import { formatPeso, marginFor, periodLabelOf, reportingPeriod, saleTime, salesF
 import { shopRepository } from './repository';
 import { ShopDataProvider, useShopData } from './useShopData';
 import { PeriodProvider, usePeriod } from './usePeriod';
-import { buildSalesSheet, downloadSheet, sheetFilename } from './exportSheet';
-import type { CartLine, Category, Note, Product, ProductInput, StockMovement } from './types';
+import { buildSalesSheet, downloadSheet, sheetFilename, type SheetSections } from './exportSheet';
+import type { CartLine, Category, Note, Period, Product, ProductInput, Sale, StockMovement } from './types';
 
 const nav = [['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', Tag], ['/reservations', 'Reservations', CalendarClock], ['/team', 'Team', Users], ['/notes', 'Notes', ClipboardList]] as const;
 // The phone capsule carries four destinations, not six: at 390px more targets
@@ -100,7 +100,45 @@ function Shell({ path, children }: { path: string; children: ReactNode }) {
   const { profile, signOut } = useAuth();
   const { loading, refresh, sales, products } = useShopData();
   const { period } = usePeriod();
-  return <div className="app-shell"><aside className={`sidebar ${menuOpen ? 'open' : ''}`}><div className="brand drawer-brand"><img className="brand-logo" src="/homies-logo.png" alt="#HOMIES" width="1654" height="651"/><span className="brand-word">PRO SHOP</span></div><div className="sidebar-label">Workspace</div><nav>{nav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => { navigate(href); setMenuOpen(false); }}><Icon size={17}/><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><button onClick={() => { const label = periodLabelOf(period); downloadSheet(buildSalesSheet(salesForPeriod(sales, period), products, label), sheetFilename(label)); setMenuOpen(false); }}><Download size={17}/><span>Export sheet</span></button><button onClick={() => navigate('/data-problems')}><Database size={17}/><span>Data problems</span></button><button onClick={() => navigate('/settings')}><Settings size={17}/><span>Settings</span></button><div className="profile"><div className="avatar">{profile?.fullName.slice(0, 1).toUpperCase()}</div><div><strong>{profile?.fullName}</strong><span>{profile?.role}</span></div></div><button onClick={() => void signOut()}><LogOut size={17}/><span>Sign out</span></button></div></aside>{menuOpen && <button className="scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)}/>}<main className="main"><header className="topbar"><div className="topbar-left"><button className="mobile-menu" aria-label="Open menu" onClick={() => setMenuOpen(true)}><Menu size={20}/></button><div className="breadcrumbs"><span>Homies Proshop</span><b>/</b><strong>{path === '/' ? 'Overview' : path.split('/')[1]?.replace('-', ' ')}</strong></div></div><img className="topbar-brand" src="/homies-logo.png" alt="#HOMIES" width="1654" height="651"/><div className="top-actions"><span className="sync-dot"><i/> Live database</span><button className="refresh-button" aria-label="Refresh live data" disabled={loading} onClick={() => void refresh()}><RefreshCw size={15}/><span>{loading ? 'Refreshing' : 'Refresh'}</span></button></div></header>{children}</main><nav className="mobile-bottom">{mobileNav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => navigate(href)}><Icon size={18}/><span>{label === 'Overview' ? 'Home' : label}</span></button>)}<button aria-label="More" onClick={() => setMenuOpen(true)}><MoreHorizontal size={18}/><span>More</span></button></nav></div>;
+  const [exporting, setExporting] = useState(false);
+  return <div className="app-shell"><aside className={`sidebar ${menuOpen ? 'open' : ''}`}><div className="brand drawer-brand"><img className="brand-logo" src="/homies-logo.png" alt="#HOMIES" width="1654" height="651"/><span className="brand-word">PRO SHOP</span></div><div className="sidebar-label">Workspace</div><nav>{nav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => { navigate(href); setMenuOpen(false); }}><Icon size={17}/><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><button onClick={() => { setExporting(true); setMenuOpen(false); }}><Download size={17}/><span>Export sheet</span></button><button onClick={() => navigate('/data-problems')}><Database size={17}/><span>Data problems</span></button><button onClick={() => navigate('/settings')}><Settings size={17}/><span>Settings</span></button><div className="profile"><div className="avatar">{profile?.fullName.slice(0, 1).toUpperCase()}</div><div><strong>{profile?.fullName}</strong><span>{profile?.role}</span></div></div><button onClick={() => void signOut()}><LogOut size={17}/><span>Sign out</span></button></div></aside>{menuOpen && <button className="scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)}/>}{exporting && <ExportDialog period={period} sales={sales} products={products} onClose={() => setExporting(false)}/>}<main className="main"><header className="topbar"><div className="topbar-left"><button className="mobile-menu" aria-label="Open menu" onClick={() => setMenuOpen(true)}><Menu size={20}/></button><div className="breadcrumbs"><span>Homies Proshop</span><b>/</b><strong>{path === '/' ? 'Overview' : path.split('/')[1]?.replace('-', ' ')}</strong></div></div><img className="topbar-brand" src="/homies-logo.png" alt="#HOMIES" width="1654" height="651"/><div className="top-actions"><span className="sync-dot"><i/> Live database</span><button className="refresh-button" aria-label="Refresh live data" disabled={loading} onClick={() => void refresh()}><RefreshCw size={15}/><span>{loading ? 'Refreshing' : 'Refresh'}</span></button></div></header>{children}</main><nav className="mobile-bottom">{mobileNav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => navigate(href)}><Icon size={18}/><span>{label === 'Overview' ? 'Home' : label}</span></button>)}<button aria-label="More" onClick={() => setMenuOpen(true)}><MoreHorizontal size={18}/><span>More</span></button></nav></div>;
+}
+
+/* The period comes from the shared context, so the export always matches the
+   window the overview is showing, whichever route you trigger it from. */
+function ExportDialog({ period, sales, products, onClose }: { period: Period; sales: Sale[]; products: Product[]; onClose: () => void }) {
+  const label = periodLabelOf(period);
+  const rows = salesForPeriod(sales, period);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const run = (sections: SheetSections) => {
+    downloadSheet(buildSalesSheet(rows, products, label, sections), sheetFilename(label, sections));
+    onClose();
+  };
+
+  return <div className="sheet-backdrop" onClick={onClose}>
+    <div className="sheet export-sheet" role="dialog" aria-modal="true" aria-label="Export sheet" onClick={event => event.stopPropagation()}>
+      <div className="sheet-head">
+        <div><h2>Export sheet</h2><span>{label} · {rows.length} sale{rows.length === 1 ? '' : 's'}</span></div>
+        <button className="sheet-close" onClick={onClose} aria-label="Close"><X size={18}/></button>
+      </div>
+      <div className="export-options">
+        <button className="button button-dark" onClick={() => run({ sales: true, inventory: false })}>
+          Sales only<small>{rows.length} sale{rows.length === 1 ? '' : 's'} in {label}</small>
+        </button>
+        <button className="button button-dark" onClick={() => run({ sales: false, inventory: true })}>
+          Inventory only<small>{products.length} products, stock as at now</small>
+        </button>
+        <button className="button button-primary" onClick={() => run({ sales: true, inventory: true })}>
+          Both<small>One sheet, two sections</small>
+        </button>
+      </div>
+    </div>
+  </div>;
 }
 
 function StatusBadge({ status }: { status: Status }) {

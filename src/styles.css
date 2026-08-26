@@ -140,7 +140,7 @@ button { cursor: pointer; }
 .eyebrow { font: 500 11px var(--mono); color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; }
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 22px; margin-bottom: 24px; }
 .page-head h1 { font-size: 30px; font-weight: 800; letter-spacing: -0.045em; margin: 10px 0 6px; }
-.title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 6px; }
 /* Replaces the old source banner: the same fact, one line instead of a card.
    It also covers mobile, where the topbar sync dot is hidden. */
 .live-pill {
@@ -564,7 +564,7 @@ button { cursor: pointer; }
 /* Sits under the live pill, so it reads as a caption on the heading rather
    than a second action. Height stays 44px — it is still a tap target at the
    counter — but the weight comes down: smaller text, pill shape, no border. */
-.period-select { display: inline-block; margin: 2px 0 10px; }
+.period-select { display: inline-block; }
 .period-select select {
   min-height: 44px; padding: 0 30px 0 12px; border: 0;
   border-radius: var(--r-pill); background: var(--surface-2); color: var(--ink-2);
@@ -618,6 +618,11 @@ button { cursor: pointer; }
   border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted);
 }
 .sheet-close:hover { background: var(--surface-2); color: var(--ink); }
+
+.export-sheet { width: min(400px, 100%); }
+.export-options { display: grid; gap: 8px; }
+.export-options .button { min-height: 60px; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; text-align: left; padding: 10px 16px; }
+.export-options .button small { font-size: 12px; font-weight: 400; opacity: 0.72; }
 
 .sheet-list { overflow-y: auto; display: grid; padding-right: 6px; }
 .sheet-list > div {

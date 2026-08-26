@@ -38,7 +38,14 @@ const STOCK_HEADERS = [
   'Units sold in period', 'Units sold all time',
 ];
 
-export function buildSalesSheet(sales: Sale[], products: Product[], periodLabel: string): string {
+export type SheetSections = { sales: boolean; inventory: boolean };
+
+export function buildSalesSheet(
+  sales: Sale[],
+  products: Product[],
+  periodLabel: string,
+  sections: SheetSections = { sales: true, inventory: true },
+): string {
   const sizeOf = new Map(products.map(product => [product.id, product.size]));
   const soldInPeriod = new Map<string, number>();
 
@@ -47,12 +54,19 @@ export function buildSalesSheet(sales: Sale[], products: Product[], periodLabel:
   lines.push(row(['Period', periodLabel]));
   lines.push(row(['Generated', new Date().toLocaleString('en-PH')]));
   lines.push(row(['Sales in period', sales.length]));
+  lines.push(row(['Contents', [sections.sales && 'sales lines', sections.inventory && 'inventory'].filter(Boolean).join(' + ')]));
   lines.push('');
 
-  lines.push(row(['SALES LINES']));
-  lines.push(row(SALE_HEADERS));
+  // Units sold per product are tallied from the sales even when the sales
+  // section is not written, so an inventory-only sheet still carries the
+  // period's movement per item.
+  if (sections.sales) {
+    lines.push(row(['SALES LINES']));
+    lines.push(row(SALE_HEADERS));
+  }
   sales.forEach(sale => sale.items.forEach(item => {
     if (item.productId) soldInPeriod.set(item.productId, (soldInPeriod.get(item.productId) || 0) + item.qty);
+    if (!sections.sales) return;
     lines.push(row([
       sale.date,
       saleTime(sale) ?? 'not recorded on import',
@@ -78,7 +92,9 @@ export function buildSalesSheet(sales: Sale[], products: Product[], periodLabel:
       sale.total,
     ]));
   }));
-  if (!sales.length) lines.push(row(['No sales in this period']));
+  if (sections.sales && !sales.length) lines.push(row(['No sales in this period']));
+
+  if (!sections.inventory) return lines.join('\r\n');
 
   lines.push('');
   lines.push(row(['INVENTORY — position as at export, not as at the end of the period']));
@@ -118,5 +134,8 @@ export function downloadSheet(csv: string, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-export const sheetFilename = (periodLabel: string) =>
-  `homies-sales-${periodLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`;
+export const sheetFilename = (periodLabel: string, sections: SheetSections) => {
+  const what = sections.sales && sections.inventory ? 'sales-and-inventory'
+    : sections.sales ? 'sales' : 'inventory';
+  return `homies-${what}-${periodLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`;
+};

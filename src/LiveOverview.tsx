@@ -118,19 +118,7 @@ export function LiveOverview() {
     <div className="page-head">
       <div>
         <div className="eyebrow">Live operations · {lastRefresh ? new Date(lastRefresh).toLocaleString('en-PH') : 'connected'}</div>
-        <div className="title-row"><h1>{monthLabel}</h1><span className="live-pill"><i/>Live data</span></div>
-        <label className="period-select">
-          <span className="sr-only">Reporting period</span>
-          <select value={encodePeriod(period)} onChange={event => setPeriod(decodePeriod(event.target.value))}>
-            <optgroup label="Range">
-              {(['1m', '3m', '6m', '12m', 'all'] as RangeKey[]).map(key =>
-                <option key={key} value={`range:${key}`}>{RANGE_LABELS[key]}</option>)}
-            </optgroup>
-            <optgroup label="Month">
-              {months.map(key => <option key={key} value={`month:${key}`}>{monthLabelOf(key)}</option>)}
-            </optgroup>
-          </select>
-        </label>
+        <div className="title-row"><h1 className="sr-only">Overview — {monthLabel}</h1><span className="live-pill"><i/>Live data</span><label className="period-select"><span className="sr-only">Reporting period</span><select value={encodePeriod(period)} onChange={event => setPeriod(decodePeriod(event.target.value))}><optgroup label="Range">{(['1m', '3m', '6m', '12m', 'all'] as RangeKey[]).map(key => <option key={key} value={`range:${key}`}>{RANGE_LABELS[key]}</option>)}</optgroup><optgroup label="Month">{months.map(key => <option key={key} value={`month:${key}`}>{monthLabelOf(key)}</option>)}</optgroup></select></label></div>
         <p>Sales figures follow the period above. Stock figures are always current.</p>
       </div>
     </div>
