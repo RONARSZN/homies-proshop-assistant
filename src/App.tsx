@@ -84,7 +84,6 @@ function Router() {
   else if (path === '/sales' || path === '/pos') page = <SalesWorkspace />;
   else if (path === '/reservations') page = <Reservations />;
   else if (path.startsWith('/sales/')) page = <Transaction id={decodeURIComponent(path.slice('/sales/'.length))} />;
-  else if (path === '/pos') page = <Pos />;
   else if (path === '/data-problems') page = <DataProblems />;
   else if (path === '/team') page = <TeamAllocation />;
   else if (path === '/notes') page = <Notes />;

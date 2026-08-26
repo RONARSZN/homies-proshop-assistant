@@ -636,15 +636,34 @@ button { cursor: pointer; }
 .empty-state .button { margin-top: 8px; }
 .empty-copy { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
 
-.reserved-indicator { display: inline-flex; align-items: center; width: fit-content; border-radius: 999px; padding: 5px 8px; background: #fff1d6; color: #8a5200; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.reserved-indicator {
+  display: inline-flex; align-items: center; width: fit-content;
+  border-radius: var(--r-pill); padding: 5px 10px;
+  background: rgba(200, 150, 31, 0.14); color: var(--amber-ink);
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+}
 .reservation-layout { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 14px; align-items: start; }
 .reservation-form, .reservation-items, .reservation-list { display: grid; gap: 10px; margin-top: 14px; }
 .reservation-item, .reservation-card { display: grid; gap: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
 .reservation-item { grid-template-columns: 1fr 88px auto; align-items: end; }
 .reservation-item > span, .reservation-card-head span { min-width: 0; }
 .reservation-item small, .reservation-card small { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
-.reservation-item label { font-size: 11px; }
+.reservation-item label { font-size: 12px; font-weight: 600; color: var(--ink-2); }
 .reservation-item input { margin-top: 4px; }
+
+/* The reservation fields were bare inputs inside labels with no class, so
+   they inherited nothing and rendered at 27px — under the 44px floor, on a
+   form used standing at the counter. */
+.reservation-form label,
+.reservation-item label { display: block; }
+.reservation-form input,
+.reservation-form select,
+.reservation-item input {
+  width: 100%; min-height: 44px; padding: 0 14px;
+  border: 1px solid var(--line-2); border-radius: var(--r-tile);
+  background: var(--surface-2); color: var(--ink); font-size: 14px;
+}
+.reservation-form label { font-size: 12px; font-weight: 600; color: var(--ink-2); display: grid; gap: 5px; }
 .icon-button { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--muted); }
 .reservation-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .reservation-card-items { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); }

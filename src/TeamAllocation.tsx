@@ -88,7 +88,7 @@ export function TeamAllocation() {
   return <div className="content">
     <div className="page-head">
       <div><div className="eyebrow">Operations · Team</div><h1>Team allocation</h1><p>Gear handed to team riders. Stock falls the same way it does for a sale, but nothing is charged.</p></div>
-      {canManage && <button className="button button-primary" onClick={() => setAddingRider(value => !value)}><Plus size={16}/>{addingRider ? 'Close form' : 'Add rider'}</button>}
+      {canManage && <button className="button button-dark" onClick={() => setAddingRider(value => !value)}><Plus size={16}/>{addingRider ? 'Close form' : 'Add rider'}</button>}
     </div>
 
     {panelError && <div className="data-note" role="alert">{panelError}</div>}
