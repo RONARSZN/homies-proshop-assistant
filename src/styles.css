@@ -232,6 +232,27 @@ button { cursor: pointer; }
 .button-dark { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .button-dark:hover:not(:disabled) { background: #24221e; border-color: #24221e; }
 
+/* ------------------------------------------------------- release prompts */
+.release-banner, .install-banner {
+  position: fixed; z-index: 120; left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 14px; background: var(--ink); color: var(--paper); border: 1px solid var(--ink-line);
+  box-shadow: 0 8px 24px rgba(16, 17, 16, 0.22); border-radius: var(--r-card);
+}
+.install-banner { bottom: calc(86px + env(safe-area-inset-bottom)); background: var(--surface); color: var(--ink); border-color: var(--line-2); }
+.release-banner span, .install-banner span { font-size: 13px; line-height: 1.4; }
+.install-banner > div:first-child { display: grid; gap: 3px; }
+.install-banner span { color: var(--muted); }
+.release-banner-actions, .install-banner-actions { display: flex; align-items: center; gap: 10px; flex: none; }
+.release-dismiss { min-height: 44px; border: 0; padding: 0 8px; background: transparent; color: inherit; font-size: 12px; font-weight: 700; }
+.release-dismiss:hover { color: var(--ember); }
+.release-banner .button, .install-banner .button { min-height: 40px; padding: 0 14px; }
+
+@media (max-width: 620px) {
+  .release-banner, .install-banner { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .release-banner-actions, .install-banner-actions { width: 100%; justify-content: flex-end; }
+}
+
 /* ----------------------------------------------------------- status
    Out of stock is the RESTING state for most of the catalog, so it
    reads grey. Red is reserved for actions and real exceptions. */
