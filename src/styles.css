@@ -104,8 +104,11 @@ button { cursor: pointer; }
 .scrim { display: none; }
 
 .main { flex: 1; min-width: 0; }
+/* Three tracks so the badge is centred against the topbar itself rather
+   than pushed off-centre by whatever sits either side of it. */
 .topbar {
-  height: 68px; display: flex; align-items: center; gap: 16px; padding: 0 28px;
+  height: 68px; display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: 12px; padding: 0 28px;
   position: sticky; top: 0; z-index: 5;
   background: rgba(237, 232, 222, 0.9); backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line-2);
@@ -114,7 +117,10 @@ button { cursor: pointer; }
 .breadcrumbs span { color: var(--muted); }
 .breadcrumbs b { color: var(--dash); }
 .breadcrumbs strong { text-transform: capitalize; font-weight: 700; }
-.top-actions { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.topbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.topbar-brand { justify-self: center; }
+.sidebar-label { padding-top: 6px; }
+.top-actions { justify-self: end; display: flex; align-items: center; gap: 14px; }
 .sync-dot { display: inline-flex; align-items: center; gap: 7px; font: 400 11px var(--mono); color: var(--muted); }
 .sync-dot i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
 .refresh-button {
