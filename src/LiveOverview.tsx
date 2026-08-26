@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
 import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
 import Database from 'lucide-react/dist/esm/icons/database.mjs';
@@ -6,9 +7,12 @@ import Tag from 'lucide-react/dist/esm/icons/tag.mjs';
 import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.mjs';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.mjs';
 import {
-  activeSkuCount, attentionCount, formatPeso, inventoryValue,
-  monthKeyOf, monthLabelOf, monthTotals, productsWithZeroPriceInStock, salesByCategoryInMonth,
+  activeSkuCount, attentionCount, bestSellersInCategory, formatPeso, inventoryValue,
+  monthKeyOf, monthLabelOf, monthTotals, productsWithZeroPriceInStock, rangeStart,
+  salesByCategoryInMonth, sizeMixInCategory, RANGE_LABELS,
+  type ChartRow, type RangeKey,
 } from './domain';
+import type { Product, Sale } from './types';
 import { useShopData } from './useShopData';
 
 function Metric({ label, value, detail, Icon }: { label: string; value: string; detail: string; Icon: typeof Boxes }) {
@@ -17,6 +21,48 @@ function Metric({ label, value, detail, Icon }: { label: string; value: string; 
     <strong>{value}</strong>
     <div className="kpi-detail">{detail}</div>
   </div>;
+}
+
+
+const RANGE_KEYS: RangeKey[] = ['1m', '3m', '6m', '12m', 'all'];
+
+/* Bars rather than a pie or a line: these are ranked magnitudes, and a bar
+   is the one form that stays readable at six rows in a quarter-width card. */
+function BarChart({ rows, unit }: { rows: ChartRow[]; unit: string }) {
+  const max = Math.max(...rows.map(row => row.qty), 1);
+  return <div className="bar-chart">{rows.map(row => <div className="bar-row" key={row.key}>
+    <span className="bar-label" title={row.title || row.label}>{row.label}</span>
+    <span className="bar-track"><span className="bar-fill" style={{ width: `${Math.max((row.qty / max) * 100, 3)}%` }}/></span>
+    <b className="bar-value">{row.qty}<small>{row.qty === 1 ? unit : `${unit}s`}</small></b>
+  </div>)}</div>;
+}
+
+function ChartCard({ title, sales, products, category, mode }: {
+  title: string; sales: Sale[]; products: Product[]; category: string; mode: 'sellers' | 'sizes';
+}) {
+  const [range, setRange] = useState<RangeKey>('6m');
+  const start = rangeStart(range);
+  const selectId = `range-${mode}-${category}`;
+  const sellers = mode === 'sellers' ? bestSellersInCategory(sales, category, start) : [];
+  const sizes = mode === 'sizes' ? sizeMixInCategory(sales, products, category, start) : { rows: [], unlinked: 0 };
+  const rows = mode === 'sellers' ? sellers : sizes.rows;
+
+  return <section className="card chart-card">
+    <div className="card-head">
+      <div><h2>{title}</h2><span>{RANGE_LABELS[range]}</span></div>
+      <label className="range-select">
+        <span className="sr-only">Range for {title}</span>
+        <select id={selectId} value={range} onChange={event => setRange(event.target.value as RangeKey)}>
+          {RANGE_KEYS.map(key => <option key={key} value={key}>{RANGE_LABELS[key]}</option>)}
+        </select>
+      </label>
+    </div>
+    {rows.length
+      ? <BarChart rows={rows} unit=" unit"/>
+      : <p className="empty-copy">Nothing sold in this window.</p>}
+    {mode === 'sizes' && sizes.unlinked > 0 &&
+      <p className="chart-note">{sizes.unlinked} unit{sizes.unlinked === 1 ? '' : 's'} not linked to a product, so unsized.</p>}
+  </section>;
 }
 
 function DataState({ children }: { children: React.ReactNode }) {
@@ -55,6 +101,13 @@ export function LiveOverview() {
       <Metric label="Inventory value" value={formatPeso(inventoryValue(products))} detail={zeroPrice ? `${zeroPrice} in-stock products have no price` : 'Current retail value'} Icon={Boxes}/>
       <Metric label="Active SKUs" value={String(activeSkuCount(products))} detail={`${products.length} products`} Icon={Tag}/>
       <Metric label="Needs attention" value={String(attentionCount(products))} detail="Current stock status" Icon={TriangleAlert}/>
+    </div>
+
+    <div className="chart-grid">
+      <ChartCard title="Best selling boards" sales={sales} products={products} category="BOARDS" mode="sellers"/>
+      <ChartCard title="Best selling boots" sales={sales} products={products} category="BINDINGS" mode="sellers"/>
+      <ChartCard title="Board sizes sold" sales={sales} products={products} category="BOARDS" mode="sizes"/>
+      <ChartCard title="Boot sizes sold" sales={sales} products={products} category="BINDINGS" mode="sizes"/>
     </div>
 
     <section className="card">

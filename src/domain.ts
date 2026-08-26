@@ -60,6 +60,80 @@ export const salesByCategoryInMonth = (sales: Sale[], key: string): CategorySale
     .sort((a, b) => b.revenue - a.revenue || b.units - a.units || a.category.localeCompare(b.category));
 };
 
+/* ------------------------------------------------------- range charts
+   Cards on the overview each carry their own window, because "what sold
+   best" and "which sizes move" are questions asked over a season, not over
+   whatever happens to have been rung up this month. */
+
+export type RangeKey = '1m' | '3m' | '6m' | '12m' | 'all';
+export const RANGE_LABELS: Record<RangeKey, string> = {
+  '1m': 'Last 30 days', '3m': 'Last 3 months', '6m': 'Last 6 months',
+  '12m': 'Last 12 months', 'all': 'All time',
+};
+
+/** ISO date the window opens on, or null for all time. */
+export const rangeStart = (key: RangeKey, now = new Date()): string | null => {
+  if (key === 'all') return null;
+  const months = key === '1m' ? 0 : Number(key.replace('m', ''));
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (key === '1m') from.setDate(from.getDate() - 30); else from.setMonth(from.getMonth() - months);
+  return `${from.getFullYear()}-${String(from.getMonth() + 1).padStart(2, '0')}-${String(from.getDate()).padStart(2, '0')}`;
+};
+
+export const completedSince = (sales: Sale[], start: string | null) =>
+  sales.filter(sale => sale.status === 'completed' && (!start || sale.date >= start));
+
+export type ChartRow = { key: string; label: string; qty: number; title?: string };
+
+/** Units sold per product within one category. Voided sales excluded. */
+export const bestSellersInCategory = (sales: Sale[], category: string, start: string | null, limit = 6): ChartRow[] => {
+  const totals = new Map<string, ChartRow>();
+  completedSince(sales, start).forEach(sale => sale.items.forEach(item => {
+    if (item.category !== category) return;
+    // Keyed on item code. Each size variant is its own code, which is the
+    // level a restock decision is actually made at. Lines with no code are
+    // imported history that was never matched to a product; they keep their
+    // description rather than being dropped from the count.
+    const code = (item.sku || '').trim();
+    const key = code ? code.toLowerCase() : `text:${item.description.trim().toLowerCase()}`;
+    const row = totals.get(key) || {
+      key,
+      label: code || item.description.trim(),
+      title: code ? `${item.description.trim()} · ${code}` : `${item.description.trim()} — no item code`,
+      qty: 0,
+    };
+    row.qty += item.qty;
+    totals.set(key, row);
+  }));
+  return [...totals.values()].sort((a, b) => b.qty - a.qty || a.label.localeCompare(b.label)).slice(0, limit);
+};
+
+const sizeRank = (value: string) => {
+  const n = parseFloat(value);
+  return Number.isNaN(n) ? Number.POSITIVE_INFINITY : n;
+};
+
+/**
+ * Units sold per size. Size lives on the product, not the sale line, so a
+ * line with no product cannot be sized — those are counted separately rather
+ * than dropped, because a silent undercount is worse than a stated gap.
+ */
+export const sizeMixInCategory = (sales: Sale[], products: Product[], category: string, start: string | null) => {
+  const sizeOf = new Map(products.map(product => [product.id, product.size]));
+  const totals = new Map<string, ChartRow>();
+  let unlinked = 0;
+  completedSince(sales, start).forEach(sale => sale.items.forEach(item => {
+    if (item.category !== category) return;
+    const size = item.productId ? sizeOf.get(item.productId) : undefined;
+    if (!size || size === '—') { unlinked += item.qty; return; }
+    const row = totals.get(size) || { key: size, label: size, qty: 0 };
+    row.qty += item.qty;
+    totals.set(size, row);
+  }));
+  const rows = [...totals.values()].sort((a, b) => sizeRank(a.label) - sizeRank(b.label) || a.label.localeCompare(b.label));
+  return { rows, unlinked };
+};
+
 export const inventoryValue = (products: Product[]) => products.reduce((sum, product) => sum + (product.qty * (product.price || 0)), 0);
 export const activeSkuCount = (products: Product[]) => products.filter(product => product.qty > 0).length;
 export const attentionCount = (products: Product[]) => products.filter(product => statusFor(product) === 'Slow Moving' || statusFor(product) === 'Data Missing').length;
