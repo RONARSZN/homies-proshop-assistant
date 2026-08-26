@@ -59,18 +59,45 @@ const tokens = (value: string): string[] =>
 
 const INDEX: ReadonlyArray<readonly [string[], string]> = CATALOG.map(([name, asset]) => [tokens(name), `/products/${asset}.webp`] as const);
 
+/* Exact aliases are reserved for real catalogue names whose database spelling
+   cannot survive word-set comparison safely. Keep these narrow: adding an
+   observed spelling is safer than weakening the matcher for every product. */
+const ALIAS_NAMES: Readonly<Record<string, string>> = {
+  '2025 WHITE XX PRO': '/products/boards_7.webp',
+  '2026 WHITE XX PRO': '/products/boards_3.webp',
+  'INTERSTATE TRAVEL ROLLER STONE 81': '/products/bags_4.webp',
+  'LOCALE BACK PACK STONE 24': '/products/bags_3.webp',
+};
+const EXACT_ALIASES = new Map<string, string>(
+  Object.entries(ALIAS_NAMES).map(([name, asset]) => [tokens(name).sort().join('|'), asset]),
+);
+
 const covers = (outer: Set<string>, inner: string[]) => inner.every(word => outer.has(word));
+const year = (words: string[]) => words.find(word => /^20\d{2}$/.test(word)) || null;
+
+const compatibleYear = (productWords: string[], catalogueWords: string[]) => {
+  const productYear = year(productWords);
+  const catalogueYear = year(catalogueWords);
+  if (productYear && catalogueYear) return productYear === catalogueYear;
+  // Yearless apparel/bag cards came from the 2026 line sheet. An older dated
+  // product may share two words and a colour but is not proven to be that item.
+  if (productYear && !catalogueYear) return productYear === '2026';
+  return true;
+};
 
 /** Catalogue tile for a product, or null when the line sheet has no card. */
 export function catalogPhoto(product: Pick<Product, 'name'>): string | null {
   const words = tokens(product.name);
   if (words.length < 2) return null;
   const set = new Set(words);
+  const alias = EXACT_ALIASES.get([...words].sort().join('|'));
+  if (alias) return alias;
 
   /* Same words, ignoring order and brand, is the strongest signal and settles
      the pairs where one product's name is a subset of another's: "Interstate
      Roller" and "Interstate 81 L Travel Roller" are different bags. */
-  const exact = INDEX.filter(([key]) => key.length === words.length && covers(set, key));
+  const exact = INDEX.filter(([key]) =>
+    compatibleYear(words, key) && key.length === words.length && covers(set, key));
   if (new Set(exact.map(([, asset]) => asset)).size === 1) return exact[0][1];
 
   /* Otherwise one name's words must wholly contain the other's: the database
@@ -80,7 +107,8 @@ export function catalogPhoto(product: Pick<Product, 'name'>): string | null {
      is worse than showing no photo, so ambiguity keeps the placeholder. The
      year, when both sides carry one, is itself a word — so a 2025 card can
      never cover a 2026 product. */
-  const hits = INDEX.filter(([key]) => key.length >= 2 && (covers(set, key) || covers(new Set(key), words)));
+  const hits = INDEX.filter(([key]) =>
+    compatibleYear(words, key) && key.length >= 2 && (covers(set, key) || covers(new Set(key), words)));
   const assets = new Set(hits.map(([, asset]) => asset));
   return assets.size === 1 ? hits[0][1] : null;
 }
