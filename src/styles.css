@@ -760,16 +760,15 @@ button { cursor: pointer; }
   .page-head > :last-child:not(:first-child) { margin-top: 14px; display: flex; gap: 8px; }
   .page-head > :last-child:not(:first-child) .button { flex: 1; }
 
-  /* Horizontal scrolling stays; the bar itself is noise on a touch device. */
+  /* Everything stacks. These were horizontal rails, but a sideways swipe on
+     a phone competes with the edge gesture that opens the More drawer, so a
+     tile could not be reached reliably. Two per row fits 390px without
+     scrolling anything sideways. */
   .kpi-grid, .inventory-summary, .category-summary {
-    display: flex; overflow-x: auto; gap: 8px; margin: 0 -16px 16px; padding: 0 16px 4px;
-    scrollbar-width: none; -ms-overflow-style: none;
-    scroll-snap-type: x mandatory;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px; margin: 0 0 16px; padding: 0; overflow: visible;
   }
-  .kpi-grid::-webkit-scrollbar,
-  .inventory-summary::-webkit-scrollbar,
-  .category-summary::-webkit-scrollbar { display: none; }
-  .kpi, .inventory-summary > div, .category-summary > div { min-width: 168px; flex: none; scroll-snap-align: start; }
+  .kpi, .inventory-summary > div, .category-summary > div { min-width: 0; }
   .chart-grid { grid-template-columns: 1fr; }
   .bar-row { grid-template-columns: minmax(72px, 28%) 1fr auto; }
 
