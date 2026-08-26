@@ -13,6 +13,15 @@ export const statusFor = (product: Product): Status => {
 };
 export const marginFor = (product: Product) => product.cost === null || product.cost === 0 || product.price === null ? null : product.price - product.cost;
 export const saleTotal = (sale: Sale) => sale.total;
+
+/**
+ * Time of sale, shown only when it is real. Every imported row was given a
+ * placeholder noon on import, so rendering a clock time for those would dress
+ * a guess up as a record.
+ */
+export const saleTime = (sale: Sale): string | null =>
+  sale.isHistorical ? null
+    : new Date(sale.soldAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' });
 export const latestSaleDate = (sales: Sale[]) => sales.reduce<string | null>((latest, sale) => !latest || sale.date > latest ? sale.date : latest, null);
 export const reportingPeriod = (sales: Sale[]) => {
   const latest = latestSaleDate(sales);
@@ -62,6 +71,15 @@ export const decodePeriod = (value: string): Period => {
 export const monthsWithSales = (sales: Sale[]): string[] =>
   [...new Set(sales.filter(sale => sale.status === 'completed').map(sale => sale.date.slice(0, 7)))]
     .sort().reverse();
+
+/**
+ * Months offered in the period picker: every month with sales, plus the
+ * current one whether or not it has any yet. Without that union the current
+ * month would vanish from the list until its first sale — you would land on
+ * it by default on the 1st, switch away, and be unable to switch back.
+ */
+export const selectableMonths = (sales: Sale[], now = new Date()): string[] =>
+  [...new Set([...monthsWithSales(sales), monthKeyOf(now)])].sort().reverse();
 
 export const periodLabelOf = (p: Period) =>
   p.type === 'month' ? monthLabelOf(p.key) : RANGE_LABELS[p.key];
@@ -139,9 +157,16 @@ export const bestSellersInCategory = (rows: Sale[], category: string, limit = 6)
   return [...totals.values()].sort((a, b) => b.qty - a.qty || a.label.localeCompare(b.label)).slice(0, limit);
 };
 
+/* Sizes must sort the way a rack is laid out, not alphabetically: vests are
+   lettered (XS→XXL) while boards and boots are numeric, and localeCompare
+   alone puts L before M before S, which is nonsense on a size chart. */
+const LETTER_SIZES = ['xxs', 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl'];
 const sizeRank = (value: string) => {
-  const n = parseFloat(value);
-  return Number.isNaN(n) ? Number.POSITIVE_INFINITY : n;
+  const text = value.trim().toLowerCase();
+  const letter = LETTER_SIZES.indexOf(text);
+  if (letter >= 0) return letter;
+  const n = parseFloat(text);
+  return Number.isNaN(n) ? Number.POSITIVE_INFINITY : 1000 + n;
 };
 
 /**

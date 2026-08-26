@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
-import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Tag from 'lucide-react/dist/esm/icons/tag.mjs';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.mjs';
 import {
   activeSkuCount, bestSellersInCategory, categoryBreakdown, decodePeriod, encodePeriod,
-  formatPeso, inventoryValue, monthKeyOf, monthLabelOf, monthsWithSales,
+  formatPeso, inventoryValue, monthKeyOf, monthLabelOf, selectableMonths,
   periodLabelOf, productsWithZeroPriceInStock, salesForPeriod,
   sizeMixInCategory, totalsOf, RANGE_LABELS,
   type ChartRow, type Period, type RangeKey,
@@ -75,7 +74,7 @@ export function LiveOverview() {
   const zeroPrice = productsWithZeroPriceInStock(products);
   const categorySales = categoryBreakdown(rows);
   const averageSale = month.transactions ? formatPeso(month.revenue / month.transactions) : '—';
-  const months = monthsWithSales(sales);
+  const months = selectableMonths(sales);
 
   return <div className="content">
     <div className="page-head">
@@ -101,7 +100,6 @@ export function LiveOverview() {
     <div className="kpi-grid">
       <Metric label={`Revenue · ${monthLabel}`} value={formatPeso(month.revenue)} detail={`Average sale ${averageSale}`} Icon={TrendingUp}/>
       <Metric label="Units sold" value={String(month.units)} detail="Completed sales only" Icon={Package}/>
-      <Metric label="Transactions" value={String(month.transactions)} detail="Completed sales only" Icon={ClipboardList}/>
       <Metric label="Inventory value" value={formatPeso(inventoryValue(products))} detail={zeroPrice ? `${zeroPrice} in-stock products have no price` : 'Stock now, not the period'} Icon={Boxes}/>
       <Metric label="Active SKUs" value={String(activeSkuCount(products))} detail={`${products.length} products · stock now`} Icon={Tag}/>
     </div>
@@ -109,8 +107,10 @@ export function LiveOverview() {
     <div className="chart-grid">
       <ChartCard title="Best selling boards" rows={rows} products={products} category="BOARDS" mode="sellers" periodLabel={monthLabel}/>
       <ChartCard title="Best selling boots" rows={rows} products={products} category="BINDINGS" mode="sellers" periodLabel={monthLabel}/>
+      <ChartCard title="Best selling vests" rows={rows} products={products} category="VESTS" mode="sellers" periodLabel={monthLabel}/>
       <ChartCard title="Board sizes sold" rows={rows} products={products} category="BOARDS" mode="sizes" periodLabel={monthLabel}/>
       <ChartCard title="Boot sizes sold" rows={rows} products={products} category="BINDINGS" mode="sizes" periodLabel={monthLabel}/>
+      <ChartCard title="Vest sizes sold" rows={rows} products={products} category="VESTS" mode="sizes" periodLabel={monthLabel}/>
     </div>
 
     <section className="card">

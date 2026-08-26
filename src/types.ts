@@ -63,6 +63,8 @@ export type SalePayment = {
 export type Sale = {
   id: string;
   date: string;
+  /** Full timestamp. Real for POS sales; imported rows carry a placeholder time. */
+  soldAt: string;
   product: string;
   sku: string;
   qty: number;

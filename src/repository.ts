@@ -161,6 +161,7 @@ export const shopRepository: ShopRepository = {
       return {
         id: row.id,
         date: row.sold_at.slice(0, 10),
+        soldAt: row.sold_at,
         product: items.length === 1 ? items[0].description : `${items.length} items`,
         sku: firstProduct?.sku || first?.description || '—',
         qty: items.reduce((sum, item) => sum + item.qty, 0),

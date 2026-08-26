@@ -441,6 +441,7 @@ button { cursor: pointer; }
 }
 .sales-list button:first-child { border-top: 0; }
 .sales-list button:hover { background: var(--surface-2); }
+.sale-date small { display: block; font: 400 11px var(--mono); color: var(--muted); margin-top: 3px; }
 .sale-date { font: 400 12px var(--mono); color: var(--muted); }
 .sales-list strong { display: block; font-size: 14px; font-weight: 700; }
 .sales-list small { display: block; font: 400 11px var(--mono); color: var(--muted); margin-top: 3px; }
