@@ -44,33 +44,43 @@ const CATALOG: ReadonlyArray<readonly [string, string]> = [
   ['2023 MOJITO', 'boots_7'],
 ];
 
-/* Line-sheet titles carry brand marks the database does not: "FOCAL-",
-   "P$$FCL - ". Stripping punctuation and the brand token leaves the part both
-   sides actually agree on. Board names keep their year, because the year is
-   what separates the 2026 Chilv from the 2025 one. */
-const normalise = (value: string) =>
+/* Brand marks land in different places on the two sides. The line sheet writes
+   "FOCAL- ONE FIVE SLATE" and "P$$FCL - ONE OUT ANORAK"; the database writes
+   "2026 DUP Atlas Pro", with the brand sitting between the year and the model.
+   Nothing positional survives that, so names are compared as sets of words
+   with the brand words dropped wherever they appear. */
+const NOISE = new Set(['DUP', 'DUPWAKE', 'FOCAL', 'PSSFCL', 'FCL', 'P', 'SOUTHBY', 'STHBY']);
+
+const tokens = (value: string): string[] =>
   value
     .toUpperCase()
-    .replace(/[^A-Z0-9]+/g, ' ')
-    .replace(/^(?:FOCAL|P FCL|PSSFCL|DUP)\s+/, '')
-    .trim();
+    .split(/[^A-Z0-9]+/)
+    .filter(word => word && !NOISE.has(word));
 
-const INDEX: ReadonlyArray<readonly [string, string]> = CATALOG.map(([name, asset]) => [normalise(name), `/products/${asset}.webp`] as const);
+const INDEX: ReadonlyArray<readonly [string[], string]> = CATALOG.map(([name, asset]) => [tokens(name), `/products/${asset}.webp`] as const);
+
+const covers = (outer: Set<string>, inner: string[]) => inner.every(word => outer.has(word));
 
 /** Catalogue tile for a product, or null when the line sheet has no card. */
 export function catalogPhoto(product: Pick<Product, 'name'>): string | null {
-  const name = normalise(product.name);
-  if (!name) return null;
+  const words = tokens(product.name);
+  if (words.length < 2) return null;
+  const set = new Set(words);
 
-  const exact = INDEX.find(([key]) => key === name);
-  if (exact) return exact[1];
+  /* Same words, ignoring order and brand, is the strongest signal and settles
+     the pairs where one product's name is a subset of another's: "Interstate
+     Roller" and "Interstate 81 L Travel Roller" are different bags. */
+  const exact = INDEX.filter(([key]) => key.length === words.length && covers(set, key));
+  if (new Set(exact.map(([, asset]) => asset)).size === 1) return exact[0][1];
 
-  /* The database may carry extra words the card does not ("2026 CHILV PRO
-     WIDE"), so fall back to containment. It has to resolve to exactly one
-     card: a row named "CHILV PRO" with no year sits inside four different
-     boards, and showing the 2023 deck for the 2026 one is worse than showing
-     no photo at all. Ambiguity keeps the placeholder. */
-  const partial = INDEX.filter(([key]) => key.length > 3 && (name.includes(key) || key.includes(name)));
-  const assets = new Set(partial.map(([, asset]) => asset));
-  return assets.size === 1 ? partial[0][1] : null;
+  /* Otherwise one name's words must wholly contain the other's: the database
+     adds a brand and sometimes a size, the line sheet sometimes adds "PRO".
+     The match has to be unique. A row called "DUP ChilV Pro" with no year is
+     inside four different boards, and showing the 2023 deck for the 2026 one
+     is worse than showing no photo, so ambiguity keeps the placeholder. The
+     year, when both sides carry one, is itself a word — so a 2025 card can
+     never cover a 2026 product. */
+  const hits = INDEX.filter(([key]) => key.length >= 2 && (covers(set, key) || covers(new Set(key), words)));
+  const assets = new Set(hits.map(([, asset]) => asset));
+  return assets.size === 1 ? hits[0][1] : null;
 }
