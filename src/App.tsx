@@ -36,6 +36,7 @@ import { LiveOverview } from './LiveOverview';
 import { TeamAllocation } from './TeamAllocation';
 import { StaffHome } from './StaffHome';
 import { formatPeso, marginFor, periodLabelOf, reportingPeriod, saleTime, salesForPeriod, saleTotal, statusFor, type Status } from './domain';
+import { catalogPhoto } from './productPhotos';
 import { shopRepository } from './repository';
 import { ShopDataProvider, useShopData } from './useShopData';
 import { PeriodProvider, usePeriod } from './usePeriod';
@@ -202,11 +203,15 @@ function ProductPhoto({ product, size, canManage, onSaved }: { product: Product;
     finally { setBusy(false); }
   }
 
-  const tile = product.imageUrl
-    ? <img className={`product-photo ${size}`} src={product.imageUrl} alt={`${product.name}, ${product.size}`}/>
+  /* A photo captured at the counter is the truth about that item, so it always
+     wins. The line-sheet tile stands in until someone takes one. */
+  const photo = product.imageUrl || catalogPhoto(product);
+
+  const tile = photo
+    ? <img className={`product-photo ${size}`} src={photo} alt={`${product.name}, ${product.size}`}/>
     : <span className={`product-photo ${size} empty`} aria-hidden="true"><Camera size={size === 'hero' ? 21 : 16}/>{size === 'hero' && <b>Add photo</b>}</span>;
 
-  if (!canManage) return product.imageUrl ? tile : <span className={`product-photo ${size} empty`} role="img" aria-label="No photo captured"><Camera size={size === 'hero' ? 21 : 16}/>{size === 'hero' && <b>No photo</b>}</span>;
+  if (!canManage) return photo ? tile : <span className={`product-photo ${size} empty`} role="img" aria-label="No photo captured"><Camera size={size === 'hero' ? 21 : 16}/>{size === 'hero' && <b>No photo</b>}</span>;
 
   return <div className={`photo-control ${size}`}>
     <label htmlFor={inputId} className="photo-drop">
