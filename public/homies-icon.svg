@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Homies Pro Shop">
-  <rect width="512" height="512" rx="96" fill="#d9322b"/>
+  <rect width="512" height="512" rx="96" fill="#e60000"/>
   <g transform="translate(256,256) skewX(-9) translate(-256,-256)" fill="#ffffff">
     <rect x="196" y="126" width="48" height="260" rx="4"/>
     <rect x="286" y="126" width="48" height="260" rx="4"/>

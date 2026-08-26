@@ -28,8 +28,8 @@
   --on-ink-3: #8E897D;
   --ink-line: #26241F;
 
-  --red: #d9322b;
-  --red-ink: #A32820;
+  --red: #e60000;
+  --red-ink: #a80000;
   --green: #4E9B72;
   --green-ink: #2F6B4C;
   --amber: #C8961F;
@@ -61,17 +61,30 @@ button { cursor: pointer; }
   display: flex; flex-direction: column;
   background: var(--surface); border-right: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 6px; padding: 0 8px; margin-bottom: 32px; }
+.brand { display: flex; align-items: center; gap: 7px; padding: 0 8px; margin-bottom: 32px; }
+/* The drawer is the phone's More tab. It gets the full lockup; desktop does
+   not, because the centred topbar badge already carries the identity there
+   and showing both reads as a mistake. */
+.drawer-brand { display: none; }
 /* The logo is text in a red box, so it is built as text rather than an
    image: crisp at any size, selectable, and readable by a screen reader.
    No background — the lockup sits directly on whatever surface it is on.
    PRO SHOP takes ink, not white, because the app surface is light. */
 .brand-badge {
+  position: relative;
   display: inline-flex; align-items: center;
   background: var(--red); color: #fff;
-  border-radius: 5px; padding: 3px 7px 4px;
+  border-radius: 4px; padding: 4px 8px 5px;
   font-weight: 800; font-size: 15px; line-height: 1;
-  letter-spacing: -0.03em; white-space: nowrap;
+  letter-spacing: -0.02em; white-space: nowrap;
+}
+/* Speech-bubble tail: vertical left edge, hypotenuse falling to the left,
+   matching the supplied mark. Drawn rather than imaged so it scales and
+   recolours with the token. */
+.brand-badge::after {
+  content: ''; position: absolute; top: 100%; left: 38%;
+  width: 8px; height: 7px; background: var(--red);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
 }
 .brand-word {
   font-weight: 800; font-size: 15px; line-height: 1;
@@ -118,7 +131,7 @@ button { cursor: pointer; }
 .breadcrumbs b { color: var(--dash); }
 .breadcrumbs strong { text-transform: capitalize; font-weight: 700; }
 .topbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.topbar-brand { justify-self: center; }
+.topbar-brand { justify-self: center; margin-bottom: 7px; }
 .sidebar-label { padding-top: 6px; }
 .top-actions { justify-self: end; display: flex; align-items: center; gap: 14px; }
 .sync-dot { display: inline-flex; align-items: center; gap: 7px; font: 400 11px var(--mono); color: var(--muted); }
@@ -167,7 +180,7 @@ button { cursor: pointer; }
 .button:hover:not(:disabled) { background: var(--surface-2); }
 .button:disabled { opacity: 0.55; cursor: default; }
 .button-primary { background: var(--red); border-color: var(--red); color: #fff; }
-.button-primary:hover:not(:disabled) { background: #c22a24; border-color: #c22a24; }
+.button-primary:hover:not(:disabled) { background: #c40000; border-color: #c40000; }
 .button-dark { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .button-dark:hover:not(:disabled) { background: #24221e; border-color: #24221e; }
 
@@ -720,6 +733,7 @@ button { cursor: pointer; }
     border: 0; border-radius: var(--r-pill); background: var(--surface); color: var(--ink);
   }
   .breadcrumbs, .sync-dot { display: none; }
+  .drawer-brand { display: flex; margin-bottom: 22px; }
   .content { padding: 22px 16px 40px; }
   .product-page-head { align-items: flex-start; }
   .product-gallery { min-height: 330px; }
