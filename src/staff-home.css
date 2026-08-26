@@ -120,7 +120,7 @@
   width: 100%;
   min-height: 76px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 92px 112px auto;
+  grid-template-columns: 46px minmax(0, 1fr) 92px 112px auto;
   align-items: center;
   gap: 16px;
   padding: 13px 16px;
@@ -132,6 +132,21 @@
   transition: background-color 140ms ease, border-color 140ms ease;
 }
 .staff-result:hover { border-color: var(--red); background: var(--paper); }
+/* Same 46px tile the inventory rows use, so a product looks the same wherever
+   staff meet it. The ground is baked into the catalogue art, so the empty
+   state is the only one that needs a border drawn. */
+.staff-result-photo {
+  width: 46px; height: 46px; flex: none;
+  border-radius: var(--r-tile);
+  object-fit: cover;
+  background: var(--photo-bg);
+}
+.staff-result-photo.empty {
+  display: grid; place-items: center;
+  background: transparent;
+  border: 1px dashed var(--dash);
+  color: var(--muted);
+}
 .staff-result-name { min-width: 0; }
 .staff-result-name strong { display: block; color: var(--red); font-size: 16px; font-weight: 800; overflow-wrap: anywhere; }
 .staff-result-name small { display: block; margin-top: 5px; color: var(--muted); font: 400 11px var(--mono); }
@@ -163,10 +178,14 @@
   .staff-greeting h1 { font-size: clamp(64px, 21vw, 92px); line-height: 0.8; }
   .staff-greeting::before { right: 60px; }
   .staff-greeting::after { right: 92px; border-right-width: 8px; }
-  .staff-result { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; }
-  .staff-result-stock { grid-column: 1; grid-row: 2; display: flex; gap: 5px; text-align: left; }
+  /* The photo takes its own column and spans both rows, so the two-line
+     name/stock stack to its right is left exactly as it was. */
+  .staff-result { grid-template-columns: 46px minmax(0, 1fr) auto; gap: 8px 12px; }
+  .staff-result-photo { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+  .staff-result-name { grid-column: 2; grid-row: 1; }
+  .staff-result-stock { grid-column: 2; grid-row: 2; display: flex; gap: 5px; text-align: left; }
   .staff-result-stock strong { font-size: 13px; }
   .staff-result-stock small { margin: 0; }
-  .staff-result-price { grid-column: 2; grid-row: 1; }
-  .staff-result > svg { grid-column: 2; grid-row: 2; justify-self: end; }
+  .staff-result-price { grid-column: 3; grid-row: 1; }
+  .staff-result > svg { grid-column: 3; grid-row: 2; justify-self: end; }
 }

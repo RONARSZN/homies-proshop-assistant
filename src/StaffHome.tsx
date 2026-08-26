@@ -4,6 +4,7 @@ import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Search from 'lucide-react/dist/esm/icons/search.mjs';
 import X from 'lucide-react/dist/esm/icons/x.mjs';
 import { formatPeso } from './domain';
+import { catalogPhoto } from './productPhotos';
 import type { Product } from './types';
 import { useShopData } from './useShopData';
 import './staff-home.css';
@@ -47,12 +48,17 @@ export function StaffHomeView({ products, loading, error, onOpenProduct }: { pro
     {error && <p className="staff-search-note" role="alert">{error}</p>}
     {search && !error && <div className="staff-search-results" aria-live="polite">
       <p className="staff-search-note">{results.length ? `${results.length} product${results.length === 1 ? '' : 's'} across the catalogue` : 'No products match that search.'}</p>
-      {results.length ? <div className="staff-result-list">{results.map(product => <button type="button" key={product.id} className="staff-result" onClick={() => onOpenProduct(product.id)}>
+      {results.length ? <div className="staff-result-list">{results.map(product => { const photo = product.imageUrl || catalogPhoto(product); return <button type="button" key={product.id} className="staff-result" onClick={() => onOpenProduct(product.id)}>
+        {/* Decorative: the product name sits beside it, so alt text would only
+            make a screen reader say the same thing twice. */}
+        {photo
+          ? <img className="staff-result-photo" src={photo} alt=""/>
+          : <span className="staff-result-photo empty" aria-hidden="true"><Package size={17}/></span>}
         <span className="staff-result-name"><strong>{product.name}</strong><small>{product.brand} · {product.size} · {product.sku}</small></span>
         <span className="staff-result-stock"><strong>{product.qty}</strong><small>remaining</small></span>
         <span className="staff-result-price">{formatPeso(product.price)}</span>
         <ArrowRight size={18}/>
-      </button>)}</div> : <div className="staff-no-results"><Package size={23}/><strong>Nothing found.</strong><span>Try a SKU, a size, or part of the product name.</span></div>}
+      </button>; })}</div> : <div className="staff-no-results"><Package size={23}/><strong>Nothing found.</strong><span>Try a SKU, a size, or part of the product name.</span></div>}
     </div>}
   </div>;
 }
