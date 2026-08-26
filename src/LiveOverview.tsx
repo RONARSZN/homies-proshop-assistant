@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
+import Download from 'lucide-react/dist/esm/icons/download.mjs';
 import Maximize2 from 'lucide-react/dist/esm/icons/maximize-2.mjs';
 import X from 'lucide-react/dist/esm/icons/x.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
@@ -13,6 +14,7 @@ import {
   type ChartRow, type Period, type RangeKey,
 } from './domain';
 import type { Product, Sale } from './types';
+import { buildSalesSheet, downloadSheet, sheetFilename } from './exportSheet';
 import { useShopData } from './useShopData';
 
 function Metric({ label, value, detail, Icon }: { label: string; value: string; detail: string; Icon: typeof Boxes }) {
@@ -120,7 +122,11 @@ export function LiveOverview() {
         <div className="title-row"><h1>{monthLabel}</h1><span className="live-pill"><i/>Live data</span></div>
         <p>Sales figures follow the period below. Stock figures are always current.</p>
       </div>
-      <label className="period-select">
+      <div className="head-actions">
+        <button className="button" onClick={() => downloadSheet(buildSalesSheet(rows, products, monthLabel), sheetFilename(monthLabel))}>
+          <Download size={16}/>Export sheet
+        </button>
+        <label className="period-select">
         <span className="sr-only">Reporting period</span>
         <select value={encodePeriod(period)} onChange={event => setPeriod(decodePeriod(event.target.value))}>
           <optgroup label="Range">
@@ -131,7 +137,8 @@ export function LiveOverview() {
             {months.map(key => <option key={key} value={`month:${key}`}>{monthLabelOf(key)}</option>)}
           </optgroup>
         </select>
-      </label>
+        </label>
+      </div>
     </div>
 
     <div className="kpi-grid">
