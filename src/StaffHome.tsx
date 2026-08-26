@@ -16,10 +16,12 @@ export function StaffHome({ onOpenProduct }: { onOpenProduct: (productId: string
 export function StaffHomeView({ products, loading, error, onOpenProduct }: { products: Product[]; loading: boolean; error: string | null; onOpenProduct: (productId: string) => void }) {
   const [query, setQuery] = useState('');
   const search = query.trim();
+  // Staff search the catalogue to answer "do we have this?" at the counter.
+  // A styled-out size is a no, so items with nothing on hand never list.
   const results = useMemo(() => {
     if (!search) return [];
     const needle = search.toLowerCase();
-    return products.filter(product => product.isActive && `${product.name} ${product.brand} ${product.sku} ${product.size} ${product.color}`.toLowerCase().includes(needle));
+    return products.filter(product => product.isActive && product.qty > 0 && `${product.name} ${product.brand} ${product.sku} ${product.size} ${product.color}`.toLowerCase().includes(needle));
   }, [products, search]);
 
   return <div className="content staff-home">
