@@ -43,25 +43,24 @@ export const monthTotals = (sales: Sale[], key: string): MonthTotals => {
   };
 };
 
-/** Ranked by units actually sold this month, not all-time product.sold. */
-export const topSellersInMonth = (sales: Sale[], key: string) => {
-  const units = new Map<string, { name: string; sku: string; qty: number }>();
+export type CategorySales = { category: string; revenue: number; units: number; transactions: number };
+export const salesByCategoryInMonth = (sales: Sale[], key: string): CategorySales[] => {
+  const grouped = new Map<string, { revenue: number; units: number; saleIds: Set<string> }>();
   salesInMonth(sales, key).forEach(sale => sale.items.forEach(item => {
-    const id = item.productId || `unmatched:${item.description}`;
-    const entry = units.get(id) || { name: item.description, sku: item.sku || '—', qty: 0 };
-    entry.qty += item.qty;
-    units.set(id, entry);
+    if (!item.category) return;
+    const category = item.category;
+    const entry = grouped.get(category) || { revenue: 0, units: 0, saleIds: new Set<string>() };
+    entry.revenue += item.lineTotal || 0;
+    entry.units += item.qty;
+    entry.saleIds.add(sale.id);
+    grouped.set(category, entry);
   }));
-  return [...units.entries()].map(([id, value]) => ({ id, ...value })).sort((a, b) => b.qty - a.qty);
+  return [...grouped.entries()]
+    .map(([category, value]) => ({ category, revenue: value.revenue, units: value.units, transactions: value.saleIds.size }))
+    .sort((a, b) => b.revenue - a.revenue || b.units - a.units || a.category.localeCompare(b.category));
 };
 
 export const inventoryValue = (products: Product[]) => products.reduce((sum, product) => sum + (product.qty * (product.price || 0)), 0);
 export const activeSkuCount = (products: Product[]) => products.filter(product => product.qty > 0).length;
 export const attentionCount = (products: Product[]) => products.filter(product => statusFor(product) === 'Slow Moving' || statusFor(product) === 'Data Missing').length;
-export const bestSellers = (products: Product[]) => [...products].sort((a, b) => b.sold - a.sold);
 export const productsWithZeroPriceInStock = (products: Product[]) => products.filter(product => product.qty > 0 && product.price === 0).length;
-export const duplicateSkuRows = (products: Product[]) => {
-  const counts = new Map<string, number>();
-  products.forEach(product => counts.set(product.sku, (counts.get(product.sku) || 0) + 1));
-  return [...counts.entries()].filter(([, count]) => count > 1);
-};

@@ -7,7 +7,7 @@ import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.mjs';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.mjs';
 import {
   activeSkuCount, attentionCount, formatPeso, inventoryValue,
-  monthKeyOf, monthLabelOf, monthTotals, productsWithZeroPriceInStock, topSellersInMonth,
+  monthKeyOf, monthLabelOf, monthTotals, productsWithZeroPriceInStock, salesByCategoryInMonth,
 } from './domain';
 import { useShopData } from './useShopData';
 
@@ -36,7 +36,7 @@ export function LiveOverview() {
   const month = monthTotals(sales, monthKey);
 
   const zeroPrice = productsWithZeroPriceInStock(products);
-  const best = topSellersInMonth(sales, monthKey).slice(0, 6);
+  const categorySales = salesByCategoryInMonth(sales, monthKey);
   const averageSale = month.transactions ? formatPeso(month.revenue / month.transactions) : '—';
 
   return <div className="content">
@@ -58,13 +58,13 @@ export function LiveOverview() {
     </div>
 
     <section className="card">
-      <div className="card-head"><div><h2>Best sellers</h2><span>Units sold in {monthLabel}</span></div></div>
+      <div className="card-head"><div><h2>Sales by category</h2><span>Total sales in {monthLabel}</span></div></div>
       {month.transactions === 0
         ? <p className="empty-copy">No sales recorded yet in {monthLabel}.</p>
-        : <div className="rank-list">{best.map((item, index) => <div className="live-rank" key={item.id}>
+        : <div className="rank-list">{categorySales.map((item, index) => <div className="live-rank" key={item.category}>
             <b className="rank">{String(index + 1).padStart(2, '0')}</b>
-            <span className="rank-name"><strong>{item.name}</strong><small>{item.sku}</small></span>
-            <span className="rank-value"><strong>{item.qty}</strong><small>units</small></span>
+            <span className="rank-name"><strong>{item.category}</strong><small>{item.transactions} transaction{item.transactions === 1 ? '' : 's'} · {item.units} unit{item.units === 1 ? '' : 's'}</small></span>
+            <span className="rank-value"><strong>{formatPeso(item.revenue)}</strong><small>sales</small></span>
           </div>)}</div>}
     </section>
   </div>;

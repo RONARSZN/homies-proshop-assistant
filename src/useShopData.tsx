@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { shopRepository } from './repository';
-import type { Category, Product, Sale } from './types';
+import type { Category, Product, Reservation, Sale } from './types';
 
 export interface ShopDataState {
   products: Product[];
   sales: Sale[];
   categories: Category[];
+  reservations: Reservation[];
   lastRefresh: string;
   loading: boolean;
   error: string | null;
@@ -13,7 +14,7 @@ export interface ShopDataState {
 }
 
 type ShopDataValues = Omit<ShopDataState, 'refresh'>;
-const initialState: ShopDataValues = { products: [], sales: [], categories: [], lastRefresh: '', loading: true, error: null };
+const initialState: ShopDataValues = { products: [], sales: [], categories: [], reservations: [], lastRefresh: '', loading: true, error: null };
 const ShopDataContext = createContext<ShopDataState | null>(null);
 
 export function ShopDataProvider({ children }: { children: ReactNode }) {
@@ -21,12 +22,13 @@ export function ShopDataProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     setState(current => ({ ...current, loading: true, error: null }));
     try {
-      const [products, sales, categories] = await Promise.all([
+      const [products, sales, categories, reservations] = await Promise.all([
         shopRepository.getProducts(),
         shopRepository.getSales(),
         shopRepository.getCategories(),
+        shopRepository.getReservations(),
       ]);
-      setState({ products, sales, categories, lastRefresh: shopRepository.getLastRefresh(), loading: false, error: null });
+      setState({ products, sales, categories, reservations, lastRefresh: shopRepository.getLastRefresh(), loading: false, error: null });
     } catch {
       setState(current => ({ ...current, loading: false, error: 'Live shop data could not be loaded.' }));
     }

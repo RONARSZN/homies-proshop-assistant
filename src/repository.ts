@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 import { downscaleImage } from './image';
-import type { CartLine, Category, Product, ProductInput, RiderAllocation, Sale, StockMovement, TeamRider } from './types';
+import type { CartLine, Category, Product, ProductInput, Reservation, RiderAllocation, Sale, SalePayment, StockMovement, TeamRider } from './types';
 
 const PHOTO_BUCKET = 'product-photos';
 const PHOTO_URL_TTL = 3600;
@@ -29,7 +29,8 @@ async function signPhotoUrls(paths: string[]): Promise<Map<string, string>> {
 type SaleRow = {
   id: string; sold_at: string; subtotal: number | null; discount: number | null;
   total: number | null; payment_method: string | null; status: 'completed' | 'voided';
-  is_historical: boolean; customer_name: string | null; created_by: string | null; seller_note: string | null;
+  is_historical: boolean; customer_name: string | null; seller_name: string | null; created_by: string | null; seller_note: string | null;
+  sale_payments: Array<{ id: string; amount: number; payment_method: string; paid_at: string; note: string | null }>;
   sale_items: Array<{
     id: string; product_id: string | null; description: string; qty: number;
     unit_price: number | null; discount: number | null; line_total: number | null;
@@ -47,12 +48,17 @@ export interface ShopRepository {
   getProducts(): Promise<Product[]>;
   getSales(): Promise<Sale[]>;
   getCategories(): Promise<Category[]>;
+  getReservations(): Promise<Reservation[]>;
+  createReservation(items: Array<{ productId: string; qty: number }>, customerName: string | null, note: string | null, expiresAt: string | null): Promise<string>;
+  cancelReservation(reservationId: string): Promise<void>;
+  convertReservation(reservationId: string): Promise<string>;
   getLastRefresh(): string;
   getMovements(productId: string): Promise<StockMovement[]>;
   addMovement(productId: string, delta: number, reason: StockMovement['reason'], note: string | null): Promise<void>;
   createProduct(values: ProductInput): Promise<string>;
   updateProduct(productId: string, values: Omit<ProductInput, 'openingQuantity'> & { isActive: boolean }): Promise<void>;
-  completeSale(lines: CartLine[], orderDiscount: number, paymentMethod: string, customerName: string | null): Promise<string>;
+  completeSale(lines: CartLine[], orderDiscount: number, paymentMethod: string, customerName: string | null, amountPaid: number, sellerName: string | null): Promise<string>;
+  recordSalePayment(saleId: string, amount: number, paymentMethod: string, note: string | null): Promise<string>;
   voidSale(saleId: string): Promise<void>;
   setProductPhoto(productId: string, file: File): Promise<void>;
   removeProductPhoto(productId: string, path: string): Promise<void>;
@@ -67,19 +73,23 @@ let lastRefresh = '';
 
 export const shopRepository: ShopRepository = {
   async getProducts() {
-    const [{ data: productData, error: productError }, { data: stockData, error: stockError }, { data: soldData, error: soldError }] = await Promise.all([
+    const [{ data: productData, error: productError }, { data: stockData, error: stockError }, { data: soldData, error: soldError }, { data: reservedData, error: reservedError }] = await Promise.all([
       supabase.from('products').select('id,sku,name,category_id,brand,size,colour,unit_cost,selling_price,supplier,received_at,is_active,image_path,categories(name)').order('name'),
       supabase.from('product_stock').select('product_id,on_hand'),
       supabase.from('sale_items').select('product_id,qty,sales!inner(status)').eq('sales.status', 'completed'),
+      supabase.from('reservation_items').select('product_id,qty,reservations!inner(status)').eq('reservations.status', 'reserved'),
     ]);
     fail('Products could not be loaded', productError);
     fail('Stock could not be loaded', stockError);
     fail('Sold quantities could not be loaded', soldError);
+    fail('Reserved quantities could not be loaded', reservedError);
     const stock = new Map((stockData || []).map(row => [row.product_id, Number(row.on_hand)]));
     const sold = new Map<string, number>();
     (soldData || []).forEach(row => {
       if (row.product_id) sold.set(row.product_id, (sold.get(row.product_id) || 0) + Number(row.qty));
     });
+    const reserved = new Map<string, number>();
+    (reservedData || []).forEach(row => reserved.set(row.product_id, (reserved.get(row.product_id) || 0) + Number(row.qty)));
     const rows = (productData || []) as ProductRow[];
     const photoUrls = await signPhotoUrls(rows.map(row => row.image_path).filter((path): path is string => Boolean(path)));
     lastRefresh = new Date().toISOString();
@@ -93,6 +103,7 @@ export const shopRepository: ShopRepository = {
       size: row.size || '—',
       color: row.colour || '—',
       qty: stock.get(row.id) || 0,
+      reservedQty: reserved.get(row.id) || 0,
       cost: row.unit_cost === null ? null : Number(row.unit_cost),
       price: row.selling_price === null ? null : Number(row.selling_price),
       sold: sold.get(row.id) || 0,
@@ -110,15 +121,13 @@ export const shopRepository: ShopRepository = {
     // embed the seller. One profiles fetch and a client-side map is cheaper
     // than a view, and matches how stock and sold counts are already joined.
     const items = 'sale_items(id,product_id,description,qty,unit_price,discount,line_total,products(sku,brand,categories(name)))';
-    const select = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,customer_name,seller_note,${items}`;
+    const select = `id,sold_at,subtotal,discount,total,payment_method,status,is_historical,created_by,customer_name,seller_name,seller_note,sale_payments(id,amount,payment_method,paid_at,note),${items}`;
 
     const [primary, { data: profileData }] = await Promise.all([
       supabase.from('sales').select(select).order('sold_at', { ascending: false }),
       supabase.from('profiles').select('id,full_name'),
     ]);
 
-    // A future sales-column addition has the same Promise.all blast radius:
-    // one failed select would blank products, sales, and categories together.
     const { data, error } = primary;
     fail('Sales could not be loaded', error);
     const sellers = new Map((profileData || []).map(profile => [profile.id, profile.full_name]));
@@ -131,6 +140,7 @@ export const shopRepository: ShopRepository = {
         description: item.description,
         sku: product?.sku || null,
         brand: product?.brand || null,
+        category: categoryName(product?.categories || null) || null,
         qty: Number(item.qty),
         unitPrice: item.unit_price === null ? null : Number(item.unit_price),
         discount: item.discount === null ? null : Number(item.discount),
@@ -138,6 +148,16 @@ export const shopRepository: ShopRepository = {
       }); });
       const first = row.sale_items[0];
       const firstProduct = relatedProduct(first?.products || null);
+      const payments: SalePayment[] = row.sale_payments.map(payment => ({
+        id: payment.id,
+        amount: Number(payment.amount),
+        paymentMethod: payment.payment_method,
+        paidAt: payment.paid_at,
+        note: payment.note,
+      }));
+      const amountPaid = payments.length ? payments.reduce((sum, payment) => sum + payment.amount, 0) : null;
+      const balanceDue = row.total === null || amountPaid === null ? null : Math.max(0, Number(row.total) - amountPaid);
+      const paymentStatus = row.total === null || amountPaid === null ? 'not-captured' : balanceDue === 0 ? 'paid' : amountPaid === 0 ? 'unpaid' : 'partial';
       return {
         id: row.id,
         date: row.sold_at.slice(0, 10),
@@ -152,8 +172,12 @@ export const shopRepository: ShopRepository = {
         total: row.total === null ? null : Number(row.total),
         paymentMethod: row.payment_method,
         customerName: row.customer_name ?? null,
-        sellerName: row.created_by ? sellers.get(row.created_by) || null : null,
+        sellerName: row.seller_name || (row.created_by ? sellers.get(row.created_by) || null : null),
         sellerNote: row.seller_note ?? null,
+        payments,
+        amountPaid,
+        balanceDue,
+        paymentStatus,
         status: row.status,
         isHistorical: row.is_historical,
         items,
@@ -215,9 +239,50 @@ export const shopRepository: ShopRepository = {
     fail('Product could not be updated', error);
   },
 
-  async completeSale(lines, orderDiscount, paymentMethod, customerName) {
-    const { data, error } = await supabase.rpc('complete_sale', { p_items: lines.map(line => ({ product_id: line.productId, qty: line.qty, unit_price: line.unitPrice, discount: line.discount })), p_order_discount: orderDiscount, p_payment_method: paymentMethod, p_customer_name: customerName });
+  async completeSale(lines, orderDiscount, paymentMethod, customerName, amountPaid, sellerName) {
+    const { data, error } = await supabase.rpc('complete_sale_with_seller', { p_items: lines.map(line => ({ product_id: line.productId, qty: line.qty, unit_price: line.unitPrice, discount: line.discount })), p_order_discount: orderDiscount, p_payment_method: paymentMethod, p_customer_name: customerName, p_amount_paid: amountPaid, p_seller_name: sellerName });
     fail('Sale could not be completed', error);
+    return String(data);
+  },
+
+  async getReservations() {
+    const { data, error } = await supabase.from('reservations')
+      .select('id,customer_name,note,status,reserved_at,expires_at,converted_sale_id,reservation_items(id,product_id,qty,products(name,sku))')
+      .order('reserved_at', { ascending: false });
+    fail('Reservations could not be loaded', error);
+    type Row = { id: string; customer_name: string | null; note: string | null; status: Reservation['status']; reserved_at: string; expires_at: string | null; converted_sale_id: string | null; reservation_items: Array<{ id: string; product_id: string; qty: number; products: { name: string; sku: string } | Array<{ name: string; sku: string }> | null }> };
+    return ((data || []) as unknown as Row[]).map(row => ({
+      id: row.id,
+      customerName: row.customer_name,
+      note: row.note,
+      status: row.status,
+      reservedAt: row.reserved_at,
+      expiresAt: row.expires_at,
+      convertedSaleId: row.converted_sale_id,
+      items: row.reservation_items.map(item => { const product = Array.isArray(item.products) ? item.products[0] : item.products; return { id: item.id, productId: item.product_id, productName: product?.name || 'Unknown product', sku: product?.sku || '—', qty: Number(item.qty) }; }),
+    })) as Reservation[];
+  },
+
+  async createReservation(items, customerName, note, expiresAt) {
+    const { data, error } = await supabase.rpc('create_reservation', { p_items: items, p_customer_name: customerName, p_note: note, p_expires_at: expiresAt });
+    fail('Reservation could not be created', error);
+    return String(data);
+  },
+
+  async cancelReservation(reservationId) {
+    const { error } = await supabase.rpc('cancel_reservation', { p_reservation_id: reservationId });
+    fail('Reservation could not be cancelled', error);
+  },
+
+  async convertReservation(reservationId) {
+    const { data, error } = await supabase.rpc('convert_reservation_to_sale', { p_reservation_id: reservationId });
+    fail('Reservation could not be pushed as a sale', error);
+    return String(data);
+  },
+
+  async recordSalePayment(saleId, amount, paymentMethod, note) {
+    const { data, error } = await supabase.rpc('record_sale_payment', { p_sale_id: saleId, p_amount: amount, p_payment_method: paymentMethod, p_note: note });
+    fail('Payment could not be recorded', error);
     return String(data);
   },
 

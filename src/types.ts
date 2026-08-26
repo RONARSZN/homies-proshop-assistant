@@ -12,6 +12,7 @@ export type Product = {
   size: string;
   color: string;
   qty: number;
+  reservedQty: number;
   cost: number | null;
   price: number | null;
   sold: number;
@@ -26,16 +27,37 @@ export type Product = {
   isActive: boolean;
 };
 
+export type ReservationItem = { id: string; productId: string; productName: string; sku: string; qty: number };
+export type Reservation = {
+  id: string;
+  customerName: string | null;
+  note: string | null;
+  status: 'reserved' | 'converted' | 'cancelled';
+  reservedAt: string;
+  expiresAt: string | null;
+  convertedSaleId: string | null;
+  items: ReservationItem[];
+};
+
 export type SaleItem = {
   id: string;
   productId: string | null;
   description: string;
   sku: string | null;
   brand: string | null;
+  category: string | null;
   qty: number;
   unitPrice: number | null;
   discount: number | null;
   lineTotal: number | null;
+};
+
+export type SalePayment = {
+  id: string;
+  amount: number;
+  paymentMethod: string;
+  paidAt: string;
+  note: string | null;
 };
 
 export type Sale = {
@@ -57,6 +79,10 @@ export type Sale = {
   sellerName: string | null;
   /** Seller name from an imported sheet, where created_by is unknown. */
   sellerNote: string | null;
+  payments: SalePayment[];
+  amountPaid: number | null;
+  balanceDue: number | null;
+  paymentStatus: 'paid' | 'partial' | 'unpaid' | 'not-captured';
   status: 'completed' | 'voided';
   isHistorical: boolean;
   items: SaleItem[];
