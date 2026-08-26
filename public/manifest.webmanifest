@@ -3,8 +3,13 @@
   "short_name": "Homies Ops",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#101110",
-  "theme_color": "#d9322b",
+  "background_color": "#EDE8DE",
+  "theme_color": "#EDE8DE",
   "description": "Internal operations control room for Homies Proshop.",
-  "icons": [{ "src": "/homies-mark.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+  "icons": [
+    { "src": "/homies-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/homies-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/homies-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/homies-icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
 }

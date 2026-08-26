@@ -61,14 +61,22 @@ button { cursor: pointer; }
   display: flex; flex-direction: column;
   background: var(--surface); border-right: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 10px; padding: 0 8px; margin-bottom: 32px; }
-.brand-mark {
-  width: 32px; height: 32px; flex: none; border-radius: 9px;
-  background: url('/homies-mark.svg') center / cover no-repeat; color: transparent; display: grid; place-items: center;
-  font-weight: 800; font-size: 0; letter-spacing: -0.06em;
+.brand { display: flex; align-items: center; gap: 6px; padding: 0 8px; margin-bottom: 32px; }
+/* The logo is text in a red box, so it is built as text rather than an
+   image: crisp at any size, selectable, and readable by a screen reader.
+   No background — the lockup sits directly on whatever surface it is on.
+   PRO SHOP takes ink, not white, because the app surface is light. */
+.brand-badge {
+  display: inline-flex; align-items: center;
+  background: var(--red); color: #fff;
+  border-radius: 5px; padding: 3px 7px 4px;
+  font-weight: 800; font-size: 15px; line-height: 1;
+  letter-spacing: -0.03em; white-space: nowrap;
 }
-.brand strong { display: block; font-size: 13px; font-weight: 800; }
-.brand span { display: block; font: 400 11px var(--mono); color: var(--muted); letter-spacing: 0.1em; margin-top: 2px; }
+.brand-word {
+  font-weight: 800; font-size: 15px; line-height: 1;
+  letter-spacing: -0.03em; color: var(--ink); white-space: nowrap;
+}
 
 .sidebar-label { font: 500 11px var(--mono); color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; padding: 0 10px 10px; }
 .sidebar nav { display: grid; gap: 4px; }
