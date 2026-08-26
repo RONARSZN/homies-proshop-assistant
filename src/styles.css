@@ -547,11 +547,12 @@ button { cursor: pointer; }
 /* ------------------------------------------------------ range charts */
 
 .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
-.chart-card .card-head { align-items: center; }
-.range-select select {
-  min-height: 44px; padding: 0 12px; max-width: 160px;
+/* min-width:0 so a long item code cannot push the tile past its grid track. */
+.chart-card { min-width: 0; }
+.period-select select {
+  min-height: 44px; padding: 0 12px;
   border: 1px solid var(--line-2); border-radius: var(--r-tile);
-  background: var(--surface-2); color: var(--ink); font-size: 13px; font-weight: 600;
+  background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 700;
 }
 
 .bar-chart { display: grid; gap: 10px; }

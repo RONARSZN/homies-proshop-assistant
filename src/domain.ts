@@ -44,19 +44,50 @@ export const monthTotals = (sales: Sale[], key: string): MonthTotals => {
 };
 
 export type CategorySales = { category: string; revenue: number; units: number; transactions: number };
-export const salesByCategoryInMonth = (sales: Sale[], key: string): CategorySales[] => {
+
+/* ------------------------------------------------------ headline period
+   The overview's headline figures answer "how are we doing", which is asked
+   about a month, a quarter or a season depending on who is asking. So the
+   period is chosen rather than pinned to the current calendar month. */
+
+export type Period = { type: 'range'; key: RangeKey } | { type: 'month'; key: string };
+
+export const encodePeriod = (p: Period) => `${p.type}:${p.key}`;
+export const decodePeriod = (value: string): Period => {
+  const [type, key] = value.split(':');
+  return type === 'month' ? { type: 'month', key } : { type: 'range', key: key as RangeKey };
+};
+
+/** Months that actually contain completed sales, newest first. */
+export const monthsWithSales = (sales: Sale[]): string[] =>
+  [...new Set(sales.filter(sale => sale.status === 'completed').map(sale => sale.date.slice(0, 7)))]
+    .sort().reverse();
+
+export const periodLabelOf = (p: Period) =>
+  p.type === 'month' ? monthLabelOf(p.key) : RANGE_LABELS[p.key];
+
+export const salesForPeriod = (sales: Sale[], p: Period): Sale[] =>
+  p.type === 'month' ? salesInMonth(sales, p.key) : completedSince(sales, rangeStart(p.key));
+
+export const totalsOf = (rows: Sale[]): MonthTotals => ({
+  revenue: rows.reduce((sum, sale) => sum + (saleTotal(sale) || 0), 0),
+  units: rows.reduce((sum, sale) => sum + sale.qty, 0),
+  transactions: rows.length,
+});
+
+/** Revenue, units and transaction reach per category for a set of sales. */
+export const categoryBreakdown = (rows: Sale[]): CategorySales[] => {
   const grouped = new Map<string, { revenue: number; units: number; saleIds: Set<string> }>();
-  salesInMonth(sales, key).forEach(sale => sale.items.forEach(item => {
+  rows.forEach(sale => sale.items.forEach(item => {
     if (!item.category) return;
-    const category = item.category;
-    const entry = grouped.get(category) || { revenue: 0, units: 0, saleIds: new Set<string>() };
+    const entry = grouped.get(item.category) || { revenue: 0, units: 0, saleIds: new Set<string>() };
     entry.revenue += item.lineTotal || 0;
     entry.units += item.qty;
     entry.saleIds.add(sale.id);
-    grouped.set(category, entry);
+    grouped.set(item.category, entry);
   }));
   return [...grouped.entries()]
-    .map(([category, value]) => ({ category, revenue: value.revenue, units: value.units, transactions: value.saleIds.size }))
+    .map(([category, v]) => ({ category, revenue: v.revenue, units: v.units, transactions: v.saleIds.size }))
     .sort((a, b) => b.revenue - a.revenue || b.units - a.units || a.category.localeCompare(b.category));
 };
 
@@ -85,10 +116,10 @@ export const completedSince = (sales: Sale[], start: string | null) =>
 
 export type ChartRow = { key: string; label: string; qty: number; title?: string };
 
-/** Units sold per product within one category. Voided sales excluded. */
-export const bestSellersInCategory = (sales: Sale[], category: string, start: string | null, limit = 6): ChartRow[] => {
+/** Units sold per item code within one category, for a set of sales. */
+export const bestSellersInCategory = (rows: Sale[], category: string, limit = 6): ChartRow[] => {
   const totals = new Map<string, ChartRow>();
-  completedSince(sales, start).forEach(sale => sale.items.forEach(item => {
+  rows.forEach(sale => sale.items.forEach(item => {
     if (item.category !== category) return;
     // Keyed on item code. Each size variant is its own code, which is the
     // level a restock decision is actually made at. Lines with no code are
@@ -118,11 +149,11 @@ const sizeRank = (value: string) => {
  * line with no product cannot be sized — those are counted separately rather
  * than dropped, because a silent undercount is worse than a stated gap.
  */
-export const sizeMixInCategory = (sales: Sale[], products: Product[], category: string, start: string | null) => {
+export const sizeMixInCategory = (rows: Sale[], products: Product[], category: string) => {
   const sizeOf = new Map(products.map(product => [product.id, product.size]));
   const totals = new Map<string, ChartRow>();
   let unlinked = 0;
-  completedSince(sales, start).forEach(sale => sale.items.forEach(item => {
+  rows.forEach(sale => sale.items.forEach(item => {
     if (item.category !== category) return;
     const size = item.productId ? sizeOf.get(item.productId) : undefined;
     if (!size || size === '—') { unlinked += item.qty; return; }
@@ -130,8 +161,8 @@ export const sizeMixInCategory = (sales: Sale[], products: Product[], category: 
     row.qty += item.qty;
     totals.set(size, row);
   }));
-  const rows = [...totals.values()].sort((a, b) => sizeRank(a.label) - sizeRank(b.label) || a.label.localeCompare(b.label));
-  return { rows, unlinked };
+  const sized = [...totals.values()].sort((a, b) => sizeRank(a.label) - sizeRank(b.label) || a.label.localeCompare(b.label));
+  return { rows: sized, unlinked };
 };
 
 export const inventoryValue = (products: Product[]) => products.reduce((sum, product) => sum + (product.qty * (product.price || 0)), 0);
