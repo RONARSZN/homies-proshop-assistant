@@ -4,10 +4,9 @@ import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
 import Database from 'lucide-react/dist/esm/icons/database.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Tag from 'lucide-react/dist/esm/icons/tag.mjs';
-import TriangleAlert from 'lucide-react/dist/esm/icons/triangle-alert.mjs';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.mjs';
 import {
-  activeSkuCount, attentionCount, bestSellersInCategory, formatPeso, inventoryValue,
+  activeSkuCount, bestSellersInCategory, formatPeso, inventoryValue,
   monthKeyOf, monthLabelOf, monthTotals, productsWithZeroPriceInStock, rangeStart,
   salesByCategoryInMonth, sizeMixInCategory, RANGE_LABELS,
   type ChartRow, type RangeKey,
@@ -100,7 +99,6 @@ export function LiveOverview() {
       <Metric label="Transactions" value={String(month.transactions)} detail="Completed sales only" Icon={ClipboardList}/>
       <Metric label="Inventory value" value={formatPeso(inventoryValue(products))} detail={zeroPrice ? `${zeroPrice} in-stock products have no price` : 'Current retail value'} Icon={Boxes}/>
       <Metric label="Active SKUs" value={String(activeSkuCount(products))} detail={`${products.length} products`} Icon={Tag}/>
-      <Metric label="Needs attention" value={String(attentionCount(products))} detail="Current stock status" Icon={TriangleAlert}/>
     </div>
 
     <div className="chart-grid">

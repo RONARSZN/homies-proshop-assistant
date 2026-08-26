@@ -211,10 +211,10 @@ button { cursor: pointer; }
 /* ------------------------------------------------- summary stat bar */
 
 .inventory-summary, .category-summary {
-  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px; margin-bottom: 16px;
 }
-.category-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.category-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .inventory-summary > div, .category-summary > div { background: var(--surface); border-radius: 18px; padding: 16px; }
 .inventory-summary span, .category-summary span {
   display: block; font: 500 11px var(--mono); color: var(--muted);
@@ -224,7 +224,7 @@ button { cursor: pointer; }
   display: block; font-size: 24px; font-weight: 800; letter-spacing: -0.05em;
   margin-top: 10px; font-variant-numeric: tabular-nums;
 }
-.inventory-summary .warn strong { color: var(--amber-ink); }
+.inventory-summary .warn strong { color: var(--amber-ink); } /* DataProblems duplicate-SKU tile */
 
 /* ------------------------------------------------- toolbar & search */
 

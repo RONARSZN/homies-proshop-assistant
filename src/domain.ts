@@ -136,5 +136,4 @@ export const sizeMixInCategory = (sales: Sale[], products: Product[], category: 
 
 export const inventoryValue = (products: Product[]) => products.reduce((sum, product) => sum + (product.qty * (product.price || 0)), 0);
 export const activeSkuCount = (products: Product[]) => products.filter(product => product.qty > 0).length;
-export const attentionCount = (products: Product[]) => products.filter(product => statusFor(product) === 'Slow Moving' || statusFor(product) === 'Data Missing').length;
 export const productsWithZeroPriceInStock = (products: Product[]) => products.filter(product => product.qty > 0 && product.price === 0).length;
