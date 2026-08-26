@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
-import Download from 'lucide-react/dist/esm/icons/download.mjs';
 import Maximize2 from 'lucide-react/dist/esm/icons/maximize-2.mjs';
 import X from 'lucide-react/dist/esm/icons/x.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
@@ -8,14 +7,14 @@ import Tag from 'lucide-react/dist/esm/icons/tag.mjs';
 import TrendingUp from 'lucide-react/dist/esm/icons/trending-up.mjs';
 import {
   activeSkuCount, bestSellersInCategory, categoryBreakdown, decodePeriod, encodePeriod,
-  formatPeso, inventoryValue, monthKeyOf, monthLabelOf, selectableMonths,
+  formatPeso, inventoryValue, monthLabelOf, selectableMonths,
   periodLabelOf, productsWithZeroPriceInStock, salesForPeriod,
   sizeMixInCategory, totalsOf, RANGE_LABELS,
-  type ChartRow, type Period, type RangeKey,
+  type ChartRow, type RangeKey,
 } from './domain';
 import type { Product, Sale } from './types';
-import { buildSalesSheet, downloadSheet, sheetFilename } from './exportSheet';
 import { useShopData } from './useShopData';
+import { usePeriod } from './usePeriod';
 
 function Metric({ label, value, detail, Icon }: { label: string; value: string; detail: string; Icon: typeof Boxes }) {
   return <div className="kpi">
@@ -105,7 +104,7 @@ export function LiveOverview() {
   // Defaults to the present calendar month, not the month of the most recent
   // sale: a quiet month should read as quiet rather than silently rolling
   // back to whenever trading last happened. From there it is selectable.
-  const [period, setPeriod] = useState<Period>({ type: 'month', key: monthKeyOf(new Date()) });
+  const { period, setPeriod } = usePeriod();
   const monthLabel = periodLabelOf(period);
   const rows = salesForPeriod(sales, period);
   const month = totalsOf(rows);
@@ -120,24 +119,19 @@ export function LiveOverview() {
       <div>
         <div className="eyebrow">Live operations · {lastRefresh ? new Date(lastRefresh).toLocaleString('en-PH') : 'connected'}</div>
         <div className="title-row"><h1>{monthLabel}</h1><span className="live-pill"><i/>Live data</span></div>
-        <p>Sales figures follow the period below. Stock figures are always current.</p>
-      </div>
-      <div className="head-actions">
-        <button className="button" onClick={() => downloadSheet(buildSalesSheet(rows, products, monthLabel), sheetFilename(monthLabel))}>
-          <Download size={16}/>Export sheet
-        </button>
         <label className="period-select">
-        <span className="sr-only">Reporting period</span>
-        <select value={encodePeriod(period)} onChange={event => setPeriod(decodePeriod(event.target.value))}>
-          <optgroup label="Range">
-            {(['1m', '3m', '6m', '12m', 'all'] as RangeKey[]).map(key =>
-              <option key={key} value={`range:${key}`}>{RANGE_LABELS[key]}</option>)}
-          </optgroup>
-          <optgroup label="Month">
-            {months.map(key => <option key={key} value={`month:${key}`}>{monthLabelOf(key)}</option>)}
-          </optgroup>
-        </select>
+          <span className="sr-only">Reporting period</span>
+          <select value={encodePeriod(period)} onChange={event => setPeriod(decodePeriod(event.target.value))}>
+            <optgroup label="Range">
+              {(['1m', '3m', '6m', '12m', 'all'] as RangeKey[]).map(key =>
+                <option key={key} value={`range:${key}`}>{RANGE_LABELS[key]}</option>)}
+            </optgroup>
+            <optgroup label="Month">
+              {months.map(key => <option key={key} value={`month:${key}`}>{monthLabelOf(key)}</option>)}
+            </optgroup>
+          </select>
         </label>
+        <p>Sales figures follow the period above. Stock figures are always current.</p>
       </div>
     </div>
 

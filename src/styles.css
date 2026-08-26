@@ -561,12 +561,21 @@ button { cursor: pointer; }
 .chart-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 14px; }
 /* min-width:0 so a long item code cannot push the tile past its grid track. */
 .chart-card { min-width: 0; }
-.head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* Sits under the live pill, so it reads as a caption on the heading rather
+   than a second action. Height stays 44px — it is still a tap target at the
+   counter — but the weight comes down: smaller text, pill shape, no border. */
+.period-select { display: inline-block; margin: 2px 0 10px; }
 .period-select select {
-  min-height: 44px; padding: 0 12px;
-  border: 1px solid var(--line-2); border-radius: var(--r-tile);
-  background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 700;
+  min-height: 44px; padding: 0 30px 0 12px; border: 0;
+  border-radius: var(--r-pill); background: var(--surface-2); color: var(--ink-2);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.01em;
+  appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
 }
+.period-select select:hover { color: var(--ink); }
 
 .bar-chart { display: grid; gap: 10px; }
 .bar-row { display: grid; grid-template-columns: minmax(84px, 22%) 1fr auto; gap: 12px; align-items: center; }

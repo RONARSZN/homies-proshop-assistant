@@ -1,4 +1,5 @@
-import type { Product, Sale } from './types';
+import type { Period, Product, RangeKey, Sale } from './types';
+export type { Period, RangeKey } from './types';
 
 export type Status = 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Slow Moving' | 'Data Missing';
 
@@ -59,8 +60,6 @@ export type CategorySales = { category: string; revenue: number; units: number; 
    about a month, a quarter or a season depending on who is asking. So the
    period is chosen rather than pinned to the current calendar month. */
 
-export type Period = { type: 'range'; key: RangeKey } | { type: 'month'; key: string };
-
 export const encodePeriod = (p: Period) => `${p.type}:${p.key}`;
 export const decodePeriod = (value: string): Period => {
   const [type, key] = value.split(':');
@@ -114,7 +113,6 @@ export const categoryBreakdown = (rows: Sale[]): CategorySales[] => {
    best" and "which sizes move" are questions asked over a season, not over
    whatever happens to have been rung up this month. */
 
-export type RangeKey = '1m' | '3m' | '6m' | '12m' | 'all';
 export const RANGE_LABELS: Record<RangeKey, string> = {
   '1m': 'Last 30 days', '3m': 'Last 3 months', '6m': 'Last 6 months',
   '12m': 'Last 12 months', 'all': 'All time',

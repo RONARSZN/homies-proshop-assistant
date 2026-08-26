@@ -1,5 +1,9 @@
 export type Role = 'owner' | 'manager' | 'staff';
 
+export type RangeKey = '1m' | '3m' | '6m' | '12m' | 'all';
+/** Reporting window for the overview: a preset range, or one calendar month. */
+export type Period = { type: 'range'; key: RangeKey } | { type: 'month'; key: string };
+
 export type Category = { id: string; name: string; sortOrder: number };
 
 export type Product = {

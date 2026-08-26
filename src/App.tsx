@@ -15,6 +15,7 @@ import Pin from 'lucide-react/dist/esm/icons/pin.mjs';
 import Plus from 'lucide-react/dist/esm/icons/plus.mjs';
 import Printer from 'lucide-react/dist/esm/icons/printer.mjs';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw.mjs';
+import Download from 'lucide-react/dist/esm/icons/download.mjs';
 import Search from 'lucide-react/dist/esm/icons/search.mjs';
 import Settings from 'lucide-react/dist/esm/icons/settings.mjs';
 import ShoppingBag from 'lucide-react/dist/esm/icons/shopping-bag.mjs';
@@ -25,9 +26,11 @@ import { AuthProvider, useAuth } from './AuthProvider';
 import { DataProblems } from './DataProblems';
 import { LiveOverview } from './LiveOverview';
 import { TeamAllocation } from './TeamAllocation';
-import { formatPeso, marginFor, reportingPeriod, saleTime, saleTotal, statusFor, type Status } from './domain';
+import { formatPeso, marginFor, periodLabelOf, reportingPeriod, saleTime, salesForPeriod, saleTotal, statusFor, type Status } from './domain';
 import { shopRepository } from './repository';
 import { ShopDataProvider, useShopData } from './useShopData';
+import { PeriodProvider, usePeriod } from './usePeriod';
+import { buildSalesSheet, downloadSheet, sheetFilename } from './exportSheet';
 import type { CartLine, Category, Note, Product, ProductInput, StockMovement } from './types';
 
 const nav = [['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', Tag], ['/reservations', 'Reservations', CalendarClock], ['/team', 'Team', Users], ['/notes', 'Notes', ClipboardList]] as const;
@@ -51,7 +54,7 @@ function AuthenticatedApp() {
   const { session, profile, loading } = useAuth();
   if (loading) return <main className="sign-in-page"><div className="loading-state"><div className="eyebrow">Homies Proshop Assistant</div><h1>Checking your session…</h1></div></main>;
   if (!session || !profile) return <SignIn />;
-  return <ShopDataProvider><Router /></ShopDataProvider>;
+  return <ShopDataProvider><PeriodProvider><Router /></PeriodProvider></ShopDataProvider>;
 }
 
 export function App() {
@@ -95,8 +98,9 @@ function Router() {
 function Shell({ path, children }: { path: string; children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { profile, signOut } = useAuth();
-  const { loading, refresh } = useShopData();
-  return <div className="app-shell"><aside className={`sidebar ${menuOpen ? 'open' : ''}`}><div className="brand drawer-brand"><img className="brand-logo" src="/homies-logo.png" alt="#HOMIES" width="1654" height="651"/><span className="brand-word">PRO SHOP</span></div><div className="sidebar-label">Workspace</div><nav>{nav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => { navigate(href); setMenuOpen(false); }}><Icon size={17}/><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><button onClick={() => navigate('/data-problems')}><Database size={17}/><span>Data problems</span></button><button onClick={() => navigate('/settings')}><Settings size={17}/><span>Settings</span></button><div className="profile"><div className="avatar">{profile?.fullName.slice(0, 1).toUpperCase()}</div><div><strong>{profile?.fullName}</strong><span>{profile?.role}</span></div></div><button onClick={() => void signOut()}><LogOut size={17}/><span>Sign out</span></button></div></aside>{menuOpen && <button className="scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)}/>}<main className="main"><header className="topbar"><div className="topbar-left"><button className="mobile-menu" aria-label="Open menu" onClick={() => setMenuOpen(true)}><Menu size={20}/></button><div className="breadcrumbs"><span>Homies Proshop</span><b>/</b><strong>{path === '/' ? 'Overview' : path.split('/')[1]?.replace('-', ' ')}</strong></div></div><img className="topbar-brand" src="/homies-logo.png" alt="#HOMIES" width="1654" height="651"/><div className="top-actions"><span className="sync-dot"><i/> Live database</span><button className="refresh-button" aria-label="Refresh live data" disabled={loading} onClick={() => void refresh()}><RefreshCw size={15}/><span>{loading ? 'Refreshing' : 'Refresh'}</span></button></div></header>{children}</main><nav className="mobile-bottom">{mobileNav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => navigate(href)}><Icon size={18}/><span>{label === 'Overview' ? 'Home' : label}</span></button>)}<button aria-label="More" onClick={() => setMenuOpen(true)}><MoreHorizontal size={18}/><span>More</span></button></nav></div>;
+  const { loading, refresh, sales, products } = useShopData();
+  const { period } = usePeriod();
+  return <div className="app-shell"><aside className={`sidebar ${menuOpen ? 'open' : ''}`}><div className="brand drawer-brand"><img className="brand-logo" src="/homies-logo.png" alt="#HOMIES" width="1654" height="651"/><span className="brand-word">PRO SHOP</span></div><div className="sidebar-label">Workspace</div><nav>{nav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => { navigate(href); setMenuOpen(false); }}><Icon size={17}/><span>{label}</span></button>)}</nav><div className="sidebar-bottom"><button onClick={() => { const label = periodLabelOf(period); downloadSheet(buildSalesSheet(salesForPeriod(sales, period), products, label), sheetFilename(label)); setMenuOpen(false); }}><Download size={17}/><span>Export sheet</span></button><button onClick={() => navigate('/data-problems')}><Database size={17}/><span>Data problems</span></button><button onClick={() => navigate('/settings')}><Settings size={17}/><span>Settings</span></button><div className="profile"><div className="avatar">{profile?.fullName.slice(0, 1).toUpperCase()}</div><div><strong>{profile?.fullName}</strong><span>{profile?.role}</span></div></div><button onClick={() => void signOut()}><LogOut size={17}/><span>Sign out</span></button></div></aside>{menuOpen && <button className="scrim" aria-label="Close menu" onClick={() => setMenuOpen(false)}/>}<main className="main"><header className="topbar"><div className="topbar-left"><button className="mobile-menu" aria-label="Open menu" onClick={() => setMenuOpen(true)}><Menu size={20}/></button><div className="breadcrumbs"><span>Homies Proshop</span><b>/</b><strong>{path === '/' ? 'Overview' : path.split('/')[1]?.replace('-', ' ')}</strong></div></div><img className="topbar-brand" src="/homies-logo.png" alt="#HOMIES" width="1654" height="651"/><div className="top-actions"><span className="sync-dot"><i/> Live database</span><button className="refresh-button" aria-label="Refresh live data" disabled={loading} onClick={() => void refresh()}><RefreshCw size={15}/><span>{loading ? 'Refreshing' : 'Refresh'}</span></button></div></header>{children}</main><nav className="mobile-bottom">{mobileNav.map(([href, label, Icon]) => <button key={href} className={path === href || (href !== '/' && path.startsWith(href)) ? 'active' : ''} onClick={() => navigate(href)}><Icon size={18}/><span>{label === 'Overview' ? 'Home' : label}</span></button>)}<button aria-label="More" onClick={() => setMenuOpen(true)}><MoreHorizontal size={18}/><span>More</span></button></nav></div>;
 }
 
 function StatusBadge({ status }: { status: Status }) {
