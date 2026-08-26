@@ -28,8 +28,8 @@
   --on-ink-3: #8E897D;
   --ink-line: #26241F;
 
-  --red: #e60000;
-  --red-ink: #a80000;
+  --red: #9a0002;
+  --red-ink: #7d0002;
   --green: #4E9B72;
   --green-ink: #2F6B4C;
   --amber: #C8961F;
@@ -70,22 +70,9 @@ button { cursor: pointer; }
    image: crisp at any size, selectable, and readable by a screen reader.
    No background — the lockup sits directly on whatever surface it is on.
    PRO SHOP takes ink, not white, because the app surface is light. */
-.brand-badge {
-  position: relative;
-  display: inline-flex; align-items: center;
-  background: var(--red); color: #fff;
-  border-radius: 4px; padding: 4px 8px 5px;
-  font-weight: 800; font-size: 15px; line-height: 1;
-  letter-spacing: -0.02em; white-space: nowrap;
-}
-/* Speech-bubble tail: vertical left edge, hypotenuse falling to the left,
-   matching the supplied mark. Drawn rather than imaged so it scales and
-   recolours with the token. */
-.brand-badge::after {
-  content: ''; position: absolute; top: 100%; left: 38%;
-  width: 8px; height: 7px; background: var(--red);
-  clip-path: polygon(0 0, 100% 0, 0 100%);
-}
+/* The supplied logo file, used as-is. Intrinsic width/height are set on the
+   element so it reserves space before decode and never shifts the topbar. */
+.brand-logo, .topbar-brand { height: 24px; width: auto; display: block; }
 .brand-word {
   font-weight: 800; font-size: 15px; line-height: 1;
   letter-spacing: -0.03em; color: var(--ink); white-space: nowrap;
@@ -131,7 +118,7 @@ button { cursor: pointer; }
 .breadcrumbs b { color: var(--dash); }
 .breadcrumbs strong { text-transform: capitalize; font-weight: 700; }
 .topbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
-.topbar-brand { justify-self: center; margin-bottom: 7px; }
+.topbar-brand { justify-self: center; }
 .sidebar-label { padding-top: 6px; }
 .top-actions { justify-self: end; display: flex; align-items: center; gap: 14px; }
 .sync-dot { display: inline-flex; align-items: center; gap: 7px; font: 400 11px var(--mono); color: var(--muted); }
@@ -180,7 +167,7 @@ button { cursor: pointer; }
 .button:hover:not(:disabled) { background: var(--surface-2); }
 .button:disabled { opacity: 0.55; cursor: default; }
 .button-primary { background: var(--red); border-color: var(--red); color: #fff; }
-.button-primary:hover:not(:disabled) { background: #c40000; border-color: #c40000; }
+.button-primary:hover:not(:disabled) { background: #7d0002; border-color: #7d0002; }
 .button-dark { background: var(--ink); border-color: var(--ink); color: var(--paper); }
 .button-dark:hover:not(:disabled) { background: #24221e; border-color: #24221e; }
 
