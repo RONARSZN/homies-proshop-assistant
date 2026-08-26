@@ -98,13 +98,13 @@ function DataState({ children }: { children: React.ReactNode }) {
 
 export function LiveOverview() {
   const { products, sales, lastRefresh, loading, error } = useShopData();
+  const { period, setPeriod } = usePeriod();
   if (loading) return <DataState><div className="eyebrow">Homies Proshop Assistant</div><h1>Loading live shop data…</h1><p>Reading the operational database.</p></DataState>;
   if (error) return <DataState><div className="eyebrow">Data unavailable</div><h1>Live shop data unavailable.</h1><p>{error}</p></DataState>;
 
   // Defaults to the present calendar month, not the month of the most recent
   // sale: a quiet month should read as quiet rather than silently rolling
   // back to whenever trading last happened. From there it is selectable.
-  const { period, setPeriod } = usePeriod();
   const monthLabel = periodLabelOf(period);
   const rows = salesForPeriod(sales, period);
   const month = totalsOf(rows);

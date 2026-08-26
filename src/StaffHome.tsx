@@ -23,6 +23,7 @@ export function StaffHomeView({ products, loading, error, onOpenProduct }: { pro
   }, [products, search]);
 
   return <div className="content staff-home">
+    <div className="staff-home-label">STAFF HOME / CATALOGUE</div>
     <section className="staff-greeting" aria-labelledby="staff-home-title">
       <span className="staff-greeting-index" aria-hidden="true">01</span>
       <h1 id="staff-home-title">Ano<br/>hanap mo?</h1>

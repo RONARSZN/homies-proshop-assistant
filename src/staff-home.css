@@ -3,6 +3,12 @@
   padding-top: clamp(36px, 7vh, 88px);
 }
 
+.staff-home-label {
+  color: var(--red);
+  font: 700 10px/1.2 'DM Mono', monospace;
+  letter-spacing: .13em;
+}
+
 .staff-greeting {
   min-height: clamp(290px, 47vh, 520px);
   position: relative;

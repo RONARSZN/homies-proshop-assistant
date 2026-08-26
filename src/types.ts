@@ -1,4 +1,5 @@
-export type Role = 'owner' | 'manager' | 'staff';
+export type Role = 'admin' | 'staff';
+export type ProfileStatus = 'pending' | 'active' | 'rejected';
 
 export type RangeKey = '1m' | '3m' | '6m' | '12m' | 'all';
 /** Reporting window for the overview: a preset range, or one calendar month. */
@@ -94,7 +95,20 @@ export type Sale = {
   items: SaleItem[];
 };
 
-export type Profile = { id: string; fullName: string; role: Role };
+export type Profile = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string | null;
+  role: Role | null;
+  status: ProfileStatus;
+  avatarPath: string | null;
+  avatarUrl: string | null;
+  requestedAt: string;
+  verifiedAt: string | null;
+};
+
+export type PendingProfile = Profile & { status: 'pending'; role: null };
 
 export type MovementReason = 'opening_balance' | 'sale' | 'return' | 'receipt' | 'adjustment' | 'write_off' | 'allocation';
 

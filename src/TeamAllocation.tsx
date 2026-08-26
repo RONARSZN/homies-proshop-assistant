@@ -16,7 +16,7 @@ const navigate = (path: string) => { window.history.pushState({}, '', path); win
 export function TeamAllocation() {
   const { products, loading, error, refresh } = useShopData();
   const { profile } = useAuth();
-  const canManage = profile?.role === 'owner' || profile?.role === 'manager';
+  const canManage = profile?.role === 'admin';
 
   const [riders, setRiders] = useState<TeamRider[]>([]);
   const [allocations, setAllocations] = useState<RiderAllocation[]>([]);
@@ -101,7 +101,7 @@ export function TeamAllocation() {
     </div>
 
     {addingRider && canManage && <section className="card wide">
-      <div className="card-head"><div><h2>Add rider</h2><span>Owner or manager</span></div></div>
+      <div className="card-head"><div><h2>Add rider</h2><span>Admin</span></div></div>
       <form className="product-form" onSubmit={addRider}>
         <label>Rider name<input name="fullName" placeholder="Full name" required/></label>
         <label>Nickname<input name="nickname" placeholder="Optional"/></label>
@@ -112,7 +112,7 @@ export function TeamAllocation() {
 
     <div className="team-layout">
       <section className="card">
-        <div className="card-head"><div><h2>Allocate gear</h2><span>{canManage ? 'Owner or manager' : 'View only'}</span></div></div>
+        <div className="card-head"><div><h2>Allocate gear</h2><span>{canManage ? 'Admin' : 'View only'}</span></div></div>
         {!canManage && <p className="empty-copy">Your role can view allocations but not record them.</p>}
         {canManage && (activeRiders.length === 0
           ? <p className="empty-copy">Add a rider first.</p>

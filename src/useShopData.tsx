@@ -29,8 +29,10 @@ export function ShopDataProvider({ children }: { children: ReactNode }) {
         shopRepository.getReservations(),
       ]);
       setState({ products, sales, categories, reservations, lastRefresh: shopRepository.getLastRefresh(), loading: false, error: null });
-    } catch {
-      setState(current => ({ ...current, loading: false, error: 'Live shop data could not be loaded.' }));
+    } catch (caught) {
+      const detail = caught instanceof Error ? caught.message : 'Unknown database error';
+      console.error('Shop data refresh failed:', caught);
+      setState(current => ({ ...current, loading: false, error: `Live shop data could not be loaded. ${detail}` }));
     }
   }, []);
   useEffect(() => {
