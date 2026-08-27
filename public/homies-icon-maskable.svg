@@ -1,11 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Homies Pro Shop">
   <rect width="512" height="512" fill="#9a0002"/>
-  <g transform="translate(256,256) scale(0.72) translate(-256,-256)">
-    <g transform="translate(256,256) skewX(-9) translate(-256,-256)" fill="#efe6de">
-      <rect x="196" y="126" width="48" height="260" rx="4"/>
-      <rect x="286" y="126" width="48" height="260" rx="4"/>
-      <rect x="146" y="188" width="238" height="48" rx="4"/>
-      <rect x="134" y="276" width="238" height="48" rx="4"/>
+  <g transform="translate(256,256) scale(0.88) translate(-256,-256)">
+    <path d="M138,100 H374 A26,26 0 0 1 400,126 V306 A26,26 0 0 1 374,332 H300 L232,420 V332 H138 A26,26 0 0 1 112,306 V126 A26,26 0 0 1 138,100 Z" fill="#efe6de"/>
+    <g transform="translate(256,216) scale(0.72) translate(-259,-256)">
+      <g transform="translate(256,256) skewX(-9) translate(-256,-256)" fill="#9a0002">
+        <rect x="196" y="126" width="48" height="260" rx="4"/>
+        <rect x="286" y="126" width="48" height="260" rx="4"/>
+        <rect x="146" y="188" width="238" height="48" rx="4"/>
+        <rect x="134" y="276" width="238" height="48" rx="4"/>
+      </g>
     </g>
   </g>
 </svg>
