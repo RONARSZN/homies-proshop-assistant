@@ -282,12 +282,12 @@ function ProductGroupCard({ group, canManage, displayName, categoryLabel }: { gr
       >{product.size}</button>)}
     </div>}
     <div className="pcard-facts">
-      <div><span>Size {selected.size}</span><strong>{selected.qty} left</strong></div>
-      <div><span>All sizes</span><strong>{remaining}</strong></div>
-      <div><span>Price</span><strong>{formatPeso(selected.price)}</strong></div>
+      <div className="pcard-fact"><span>Size {selected.size}</span><strong>{selected.qty} left</strong></div>
+      <div className="pcard-fact"><span>All sizes</span><strong>{remaining}</strong></div>
+      <div className="pcard-fact"><span>Price</span><strong>{formatPeso(selected.price)}</strong></div>
     </div>
     {selected.reservedQty > 0 && <span className="reserved-indicator">Reserved {selected.reservedQty}</span>}
-    {canManage && <button className="button button-dark pcard-edit" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit selected item</button>}
+    {canManage && <button className="button button-dark pcard-edit" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit item</button>}
   </article>;
 }
 
