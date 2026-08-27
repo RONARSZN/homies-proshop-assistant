@@ -46,6 +46,7 @@ export function MyAccount({ standalone = false, onBack }: { standalone?: boolean
       {message && <p className="form-message" role="status">{message}</p>}
       <button className="button button-primary account-submit" disabled={busy}>{busy ? 'SAVING…' : 'SAVE PROFILE'}</button>
     </form>
+    <p className="account-build">BUILD {__BUILD_ID__}</p>
     {standalone && <div className="standalone-actions">{onBack && <button type="button" onClick={onBack}>BACK</button>}<button type="button" onClick={() => void signOut()}><LogOut size={15}/>SIGN OUT</button></div>}
   </section>;
 

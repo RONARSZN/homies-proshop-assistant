@@ -58,6 +58,7 @@
 .account-locked-grid span,.account-admin-note { font:700 10px/1.4 'DM Mono',monospace; letter-spacing:.08em; }
 .account-locked-grid strong { color:var(--red); }
 .account-admin-note { margin:0; color:var(--muted,#5b5852); }
+.account-build { margin:18px 0 0; font:700 10px/1.4 'DM Mono',monospace; letter-spacing:.08em; color:var(--muted,#5b5852); }
 .standalone-actions { display:flex; justify-content:space-between; margin-top:28px; border-top:1px solid var(--hairline,#cfc7b9); padding-top:18px; }
 .standalone-actions button { display:flex; gap:7px; align-items:center; border:0; background:transparent; color:var(--ink); font:800 11px 'DM Mono',monospace; cursor:pointer; }
 
