@@ -61,7 +61,11 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--canvas); }
+/* overflow-x: clip rather than hidden. hidden would turn the root into a
+   scroll container and break the sticky topbar; clip stops the sideways drag
+   without that side effect. */
+html { overflow-x: clip; }
+body { margin: 0; background: var(--canvas); overflow-x: clip; max-width: 100%; }
 /* One fixed grain plane over the whole viewport rather than a tile on each
    surface: the texture then belongs to the paper, not to the components, and
    nothing has to re-tile on scroll. pointer-events:none keeps it out of hit
@@ -73,6 +77,15 @@ body::after {
   opacity: 0.15; mix-blend-mode: multiply;
 }
 button, input, textarea, select { font: inherit; }
+/* iOS zooms the page in when a focused control renders below 16px, and it
+   never zooms back out afterwards. The form scale here is 12-14px, so pin the
+   controls to 16px on touch pointers only and leave the desktop scale alone.
+   16px is the threshold, not a preference - 15.5px still triggers it. */
+@media (pointer: coarse) {
+  input, select, textarea { font-size: 16px; }
+}
+/* Removes the double-tap-to-zoom gesture on anything tappable. */
+button, input, select, textarea, a { touch-action: manipulation; }
 button { cursor: pointer; }
 :focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
