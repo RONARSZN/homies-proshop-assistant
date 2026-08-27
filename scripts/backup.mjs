@@ -15,9 +15,11 @@ const supabaseUrl = /^https?:\/\//i.test(rawSupabaseUrl)
   : /^[a-z0-9]{20}$/i.test(rawSupabaseUrl)
     ? `https://${rawSupabaseUrl}.supabase.co`
     : '';
-const required = ['SUPABASE_SERVICE_ROLE_KEY', ...(backupMode === 'full' ? ['SUPABASE_DB_URL'] : [])];
+const adminKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const required = [...(backupMode === 'full' ? ['SUPABASE_DB_URL'] : [])];
 const missing = required.filter(name => !process.env[name]);
 if (!supabaseUrl) missing.push('SUPABASE_URL or VITE_SUPABASE_URL');
+if (!adminKey) missing.push('SUPABASE_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY');
 if (missing.length) {
   throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
 }
@@ -42,7 +44,7 @@ const dump = async (name, extra = []) => {
     const detail = error instanceof Error ? error.message : String(error);
     const safeDetail = detail
       .replaceAll(process.env.SUPABASE_DB_URL, '[database URL redacted]')
-      .replaceAll(process.env.SUPABASE_SERVICE_ROLE_KEY, '[service key redacted]');
+      .replaceAll(adminKey, '[admin key redacted]');
     throw new Error(`Database dump failed for ${name}: ${safeDetail}`);
   }
 };
@@ -54,8 +56,8 @@ if (backupMode === 'full') {
 }
 
 const apiHeaders = {
-  apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-  Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+  apikey: adminKey,
+  ...(adminKey.startsWith('sb_secret_') ? {} : { Authorization: `Bearer ${adminKey}` }),
 };
 const api = (path, options = {}) => fetch(`${supabaseUrl}${path}`, { ...options, headers: { ...apiHeaders, ...options.headers } });
 const tables = ['categories', 'products', 'profiles', 'sales', 'sale_items', 'sale_payments', 'stock_movements', 'team_riders', 'rider_allocations', 'reservations', 'reservation_items'];
