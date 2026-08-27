@@ -3,7 +3,7 @@ import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Search from 'lucide-react/dist/esm/icons/search.mjs';
 import X from 'lucide-react/dist/esm/icons/x.mjs';
-import { formatPeso } from './domain';
+import { byModelYearThenName, formatPeso } from './domain';
 import { catalogPhoto } from './productPhotos';
 import type { Product } from './types';
 import { useShopData } from './useShopData';
@@ -24,7 +24,11 @@ export function StaffHomeView({ products, loading, error, onOpenProduct, eyebrow
   const results = useMemo(() => {
     if (!search) return [];
     const needle = search.toLowerCase();
-    return products.filter(product => product.isActive && (includeOutOfStock || product.qty > 0) && `${product.name} ${product.brand} ${product.sku} ${product.size} ${product.color}`.toLowerCase().includes(needle));
+    return products
+      .filter(product => product.isActive && (includeOutOfStock || product.qty > 0) && `${product.name} ${product.brand} ${product.sku} ${product.size} ${product.color}`.toLowerCase().includes(needle))
+      /* A brand carried since 2022 matches across five model years at once.
+         Current season first is the answer the counter usually wants. */
+      .sort(byModelYearThenName);
   }, [products, search, includeOutOfStock]);
 
   return <div className="content staff-home">

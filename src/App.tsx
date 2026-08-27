@@ -34,7 +34,7 @@ import { DataProblems } from './DataProblems';
 import { LiveOverview } from './LiveOverview';
 import { TeamAllocation } from './TeamAllocation';
 import { StaffHome, StaffHomeView } from './StaffHome';
-import { formatPeso, marginFor, periodLabelOf, reportingPeriod, saleTime, salesForPeriod, saleTotal, statusFor, type Status } from './domain';
+import { byModelYearThenName, formatPeso, marginFor, modelYearOf, periodLabelOf, reportingPeriod, saleTime, salesForPeriod, saleTotal, statusFor, type Status } from './domain';
 import { catalogPhoto } from './productPhotos';
 import { shopRepository } from './repository';
 import { ShopDataProvider, useShopData } from './useShopData';
@@ -239,7 +239,7 @@ const groupProducts = (products: Product[]): ProductGroup[] => {
     group.variants.push(product);
     groups.set(key, group);
   });
-  return [...groups.values()].map(group => ({ ...group, variants: [...group.variants].sort((a, b) => a.size.localeCompare(b.size, undefined, { numeric: true }) || a.sku.localeCompare(b.sku)) })).sort((a, b) => a.name.localeCompare(b.name));
+  return [...groups.values()].map(group => ({ ...group, variants: [...group.variants].sort((a, b) => a.size.localeCompare(b.size, undefined, { numeric: true }) || a.sku.localeCompare(b.sku)) })).sort(byModelYearThenName);
 };
 
 /* At the counter the size is half the identity of the item: two rows reading
@@ -380,10 +380,16 @@ function CategoryInventory({ id }: { id: string }) {
   const boardYearPattern = /^(\d{4})\s+/;
   const boardGroupsByYear = new Map<string, ProductGroup[]>();
   if (category.name === 'BOARDS') filtered.forEach(group => {
-    const year = group.name.match(boardYearPattern)?.[1] || 'Other';
+    const year = modelYearOf(group.name) || 'Other';
     boardGroupsByYear.set(year, [...(boardGroupsByYear.get(year) || []), group]);
   });
-  const boardYears = [...boardGroupsByYear].map(([year, yearGroups]) => ({ year, groups: yearGroups })).sort((a, b) => b.year.localeCompare(a.year, undefined, { numeric: true }));
+  /* 'Other' sorts last by hand. Left to the string compare it beats '2026',
+     so undated boards would head the page above the current season. */
+  const boardYears = [...boardGroupsByYear].map(([year, yearGroups]) => ({ year, groups: yearGroups })).sort((a, b) => {
+    if (a.year === 'Other') return 1;
+    if (b.year === 'Other') return -1;
+    return b.year.localeCompare(a.year, undefined, { numeric: true });
+  });
   const productGroups = category.name === 'BOARDS'
     ? <div className="product-year-list">{boardYears.map(section => <section className="product-year-section" key={section.year}><div className="product-year-head"><h2>{section.year}</h2><span>{section.groups.length} style{section.groups.length === 1 ? '' : 's'}</span></div><div className="product-group-grid">{section.groups.map(group => <ProductGroupCard key={group.key} group={group} canManage={canManage} displayName={group.name.replace(boardYearPattern, '')}/>)}</div></section>)}</div>
     : <div className="product-group-grid">{filtered.map(group => <ProductGroupCard key={group.key} group={group} canManage={canManage}/>)}</div>;

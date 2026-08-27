@@ -15,6 +15,37 @@ export const statusFor = (product: Product): Status => {
 export const marginFor = (product: Product) => product.cost === null || product.cost === 0 || product.price === null ? null : product.price - product.cost;
 export const saleTotal = (sale: Sale) => sale.total;
 
+/* ------------------------------------------------------------- model years
+   The model year is not a column. It lives as a "2026 " prefix on the product
+   name, which is how the shop's own line sheets are written, so ordering by
+   year means reading it back out of the string. Every category except luggage
+   carries one; helmets are half dated, half not.
+
+   Sorting names as plain strings puts 2022 above 2026, which is backwards at
+   the counter — the current season is what staff are asked for. */
+
+const MODEL_YEAR = /^(\d{4})\s+/;
+
+export const modelYearOf = (name: string): string | null => name.match(MODEL_YEAR)?.[1] ?? null;
+
+/**
+ * Newest model year first, undated stock last, alphabetical within a year.
+ *
+ * Undated has to be handled explicitly rather than left to the string compare:
+ * descending, a name with no leading digits outranks "2026", so evergreen
+ * helmets and luggage would float above the current season.
+ */
+export const byModelYearThenName = (a: { name: string }, b: { name: string }) => {
+  const yearA = modelYearOf(a.name);
+  const yearB = modelYearOf(b.name);
+  if (yearA !== yearB) {
+    if (!yearA) return 1;
+    if (!yearB) return -1;
+    return yearB.localeCompare(yearA, undefined, { numeric: true });
+  }
+  return a.name.localeCompare(b.name);
+};
+
 /**
  * Time of sale, shown only when it is real. Every imported row was given a
  * placeholder noon on import, so rendering a clock time for those would dress
