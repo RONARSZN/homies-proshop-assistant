@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Search from 'lucide-react/dist/esm/icons/search.mjs';
@@ -14,23 +14,27 @@ export function StaffHome({ onOpenProduct }: { onOpenProduct: (productId: string
   return <StaffHomeView products={products} loading={loading} error={error} onOpenProduct={onOpenProduct}/>;
 }
 
-export function StaffHomeView({ products, loading, error, onOpenProduct }: { products: Product[]; loading: boolean; error: string | null; onOpenProduct: (productId: string) => void }) {
+export function StaffHomeView({ products, loading, error, onOpenProduct, eyebrow = 'STAFF HOME / CATALOGUE', includeOutOfStock = false, beforeSearch }: { products: Product[]; loading: boolean; error: string | null; onOpenProduct: (productId: string) => void; eyebrow?: string; includeOutOfStock?: boolean; beforeSearch?: ReactNode }) {
   const [query, setQuery] = useState('');
   const search = query.trim();
-  // Staff search the catalogue to answer "do we have this?" at the counter.
-  // A styled-out size is a no, so items with nothing on hand never list.
+  /* Staff search the catalogue to answer "do we have this?" at the counter.
+     A styled-out size is a no, so items with nothing on hand never list.
+     Admins get the opposite default: a zero row is the thing they have come
+     to fix, so hiding it would hide the work. */
   const results = useMemo(() => {
     if (!search) return [];
     const needle = search.toLowerCase();
-    return products.filter(product => product.isActive && product.qty > 0 && `${product.name} ${product.brand} ${product.sku} ${product.size} ${product.color}`.toLowerCase().includes(needle));
-  }, [products, search]);
+    return products.filter(product => product.isActive && (includeOutOfStock || product.qty > 0) && `${product.name} ${product.brand} ${product.sku} ${product.size} ${product.color}`.toLowerCase().includes(needle));
+  }, [products, search, includeOutOfStock]);
 
   return <div className="content staff-home">
-    <div className="staff-home-label">STAFF HOME / CATALOGUE</div>
+    <div className="staff-home-label">{eyebrow}</div>
     <section className="staff-greeting" aria-labelledby="staff-home-title">
       <span className="staff-greeting-index" aria-hidden="true">01</span>
       <h1 id="staff-home-title">Ano<br/>hanap mo?</h1>
     </section>
+
+    {beforeSearch}
 
     <div className={`staff-catalog-search ${loading ? 'is-loading' : ''}`}>
       <Search size={20}/>
@@ -55,7 +59,7 @@ export function StaffHomeView({ products, loading, error, onOpenProduct }: { pro
           ? <img className="staff-result-photo" src={photo} alt=""/>
           : <span className="staff-result-photo empty" aria-hidden="true"><Package size={17}/></span>}
         <span className="staff-result-name"><strong>{product.name}</strong><small>{product.brand} · {product.size} · {product.sku}</small></span>
-        <span className="staff-result-stock"><strong>{product.qty}</strong><small>remaining</small></span>
+        <span className={`staff-result-stock ${product.qty === 0 ? 'is-out' : ''}`}><strong>{product.qty}</strong><small>{product.qty === 0 ? 'out of stock' : 'remaining'}</small></span>
         <span className="staff-result-price">{formatPeso(product.price)}</span>
         <ArrowRight size={18}/>
       </button>; })}</div> : <div className="staff-no-results"><Package size={23}/><strong>Nothing found.</strong><span>Try a SKU, a size, or part of the product name.</span></div>}

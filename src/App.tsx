@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
 import Camera from 'lucide-react/dist/esm/icons/camera.mjs';
-import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right.mjs';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.mjs';
 import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
 import CalendarClock from 'lucide-react/dist/esm/icons/calendar-clock.mjs';
@@ -34,7 +33,8 @@ import { VerifyAccounts } from './VerifyAccounts';
 import { DataProblems } from './DataProblems';
 import { LiveOverview } from './LiveOverview';
 import { TeamAllocation } from './TeamAllocation';
-import { StaffHome } from './StaffHome';
+import { StaffHome, StaffHomeView } from './StaffHome';
+import './inventory.css';
 import { formatPeso, marginFor, periodLabelOf, reportingPeriod, saleTime, salesForPeriod, saleTotal, statusFor, type Status } from './domain';
 import { catalogPhoto } from './productPhotos';
 import { shopRepository } from './repository';
@@ -243,39 +243,123 @@ const groupProducts = (products: Product[]): ProductGroup[] => {
   return [...groups.values()].map(group => ({ ...group, variants: [...group.variants].sort((a, b) => a.size.localeCompare(b.size, undefined, { numeric: true }) || a.sku.localeCompare(b.sku)) })).sort((a, b) => a.name.localeCompare(b.name));
 };
 
-function ProductGroupCard({ group, canManage, displayName, categoryLabel }: { group: ProductGroup; canManage: boolean; displayName?: string; categoryLabel?: string }) {
-  const [selectedId, setSelectedId] = useState(group.variants[0].id);
-  const selected = group.variants.find(product => product.id === selectedId) || group.variants[0];
-  const remaining = group.variants.reduce((sum, product) => sum + product.qty, 0);
-  return <article className="product-group-card">{categoryLabel && <span className="group-category">{categoryLabel}</span>}<div className="product-group-head"><ProductPhoto product={selected} size="thumb" canManage={false}/><div><strong>{displayName || group.name}</strong><small>{group.brand}{group.color !== '—' ? ` · ${group.color}` : ''}</small></div><span className="group-remaining"><strong>{remaining}</strong><small>total remaining</small></span></div><div className="variant-control"><label htmlFor={`variant-${group.key}`}>Select size</label><select id={`variant-${group.key}`} value={selected.id} onChange={event => setSelectedId(event.target.value)}>{group.variants.map(product => <option key={product.id} value={product.id}>{product.size} · {product.sku}</option>)}</select></div><div className="variant-details"><div><span>Selected size</span><strong>{selected.size}</strong></div><div><span>Remaining</span><strong>{selected.qty}</strong></div><div><span>Price</span><strong>{formatPeso(selected.price)}</strong></div>{selected.reservedQty > 0 && <span className="reserved-indicator">Reserved {selected.reservedQty}</span>}<StatusBadge status={statusFor(selected)}/></div>{canManage && <button className="button button-dark edit-variant" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit selected item</button>}</article>;
-}
-
-const matchesQuery = (group: ProductGroup, query: string) =>
-  `${group.name} ${group.brand} ${group.color} ${group.variants.map(product => `${product.sku} ${product.size}`).join(' ')}`.toLowerCase().includes(query.toLowerCase());
-
 /* At the counter the size is half the identity of the item: two rows reading
    the same product name are a different sale. Size rides with the name
    wherever a sale line is picked or reviewed. An uncaptured size is '—', which
    would read as a typo appended to the name, so it drops out instead. */
 const sizedName = (name: string, size: string | null | undefined) => size && size !== '—' ? `${name} · ${size}` : name;
 
+/* Photo-first card. The whole tile is the way into the product page, so the
+   photo and the name share one button; the size pills sit outside it, because
+   a button nested inside a button is invalid and screen readers drop it. */
+function ProductGroupCard({ group, canManage, displayName, categoryLabel }: { group: ProductGroup; canManage: boolean; displayName?: string; categoryLabel?: string }) {
+  const [selectedId, setSelectedId] = useState(group.variants[0].id);
+  const selected = group.variants.find(product => product.id === selectedId) || group.variants[0];
+  const remaining = group.variants.reduce((sum, product) => sum + product.qty, 0);
+  const status = statusFor(selected);
+  const photo = selected.imageUrl || catalogPhoto(selected);
+  const badge = status === 'Out of Stock' ? 'OUT' : status === 'Low Stock' ? 'LOW' : null;
+  return <article className="pcard">
+    <button type="button" className="pcard-open" onClick={() => navigate(`/inventory/${selected.id}`)}>
+      <span className="pcard-photo">
+        {photo
+          ? <img src={photo} alt="" loading="lazy"/>
+          : <span className="pcard-photo-empty"><b>{selected.sku}</b><small>no photo yet</small></span>}
+        {badge && <span className={`pcard-badge is-${badge.toLowerCase()}`}>{badge}</span>}
+      </span>
+      <span className="pcard-title">
+        {categoryLabel && <small className="pcard-cat">{categoryLabel}</small>}
+        <strong>{displayName || group.name}</strong>
+        <small className="pcard-brand">{group.brand}{group.color !== '—' ? ` · ${group.color}` : ''}</small>
+      </span>
+    </button>
+    {group.variants.length > 1 && <div className="pcard-sizes" role="group" aria-label={`Select a size of ${group.name}`}>
+      {group.variants.map(product => <button
+        key={product.id}
+        type="button"
+        className={`pcard-size ${product.id === selected.id ? 'is-on' : ''} ${product.qty === 0 ? 'is-empty' : ''}`}
+        aria-pressed={product.id === selected.id}
+        onClick={() => setSelectedId(product.id)}
+      >{product.size}</button>)}
+    </div>}
+    <div className="pcard-facts">
+      <div><span>Size {selected.size}</span><strong>{selected.qty} left</strong></div>
+      <div><span>All sizes</span><strong>{remaining}</strong></div>
+      <div><span>Price</span><strong>{formatPeso(selected.price)}</strong></div>
+    </div>
+    {selected.reservedQty > 0 && <span className="reserved-indicator">Reserved {selected.reservedQty}</span>}
+    {canManage && <button className="button button-dark pcard-edit" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit selected item</button>}
+  </article>;
+}
+
+/* The category tile borrows a photo from the first product in it that has one.
+   Photos are matched per style against a 28-card line sheet, so a category
+   with nothing photographed is a real case and gets a designed empty tile
+   rather than a grey box. */
+function categoryPhoto(items: Product[]): string | null {
+  for (const item of items) {
+    const photo = item.imageUrl || catalogPhoto(item);
+    if (photo) return photo;
+  }
+  return null;
+}
+
+function InventoryModeToggle({ mode, onChange }: { mode: 'search' | 'categories'; onChange: (next: 'search' | 'categories') => void }) {
+  return <div className="mode-toggle" role="group" aria-label="Inventory view">
+    <button type="button" className={mode === 'search' ? 'is-on' : ''} aria-pressed={mode === 'search'} onClick={() => onChange('search')}>Search</button>
+    <button type="button" className={mode === 'categories' ? 'is-on' : ''} aria-pressed={mode === 'categories'} onClick={() => onChange('categories')}>Categories</button>
+  </div>;
+}
+
 function Inventory() {
   const { products, categories, loading, error } = useShopData();
   const { profile } = useAuth();
+  const [mode, setMode] = useState<'search' | 'categories'>('search');
   const [adding, setAdding] = useState(false);
-  const [query, setQuery] = useState('');
+  const canManage = profile?.role === 'admin';
+  const toggle = <InventoryModeToggle mode={mode} onChange={setMode}/>;
+
+  /* Search is the question the counter actually asks, so admins open on the
+     same catalogue screen staff get — minus the rule that hides a styled-out
+     size, because for an admin that row is usually the reason they came. */
+  if (mode === 'search') return <StaffHomeView
+    products={products}
+    loading={loading}
+    error={error}
+    eyebrow="OPERATIONS / INVENTORY"
+    includeOutOfStock
+    beforeSearch={toggle}
+    onOpenProduct={id => navigate(`/inventory/${id}`)}
+  />;
+
   if (loading) return <LoadingState/>;
   if (error) return <ErrorState error={error}/>;
-  const canManage = profile?.role === 'admin';
   const totalRemaining = products.reduce((sum, product) => sum + product.qty, 0);
   const allGroups = groupProducts(products);
-  const search = query.trim();
-  // Searching spans the whole catalogue. The most common counter question is
-  // "do we have this in 148?", and answering it should not require knowing
-  // which category the product was filed under.
-  const results = search ? allGroups.filter(group => matchesQuery(group, search)) : [];
-  const categoryOf = new Map(categories.map(category => [category.id, friendlyCategory(category.name)]));
-  return <div className="content"><PageHead eyebrow="Operations · Inventory" title="Inventory" copy="Search the whole catalogue, or open a category to browse by size." action={canManage && <button className="button button-primary" onClick={() => setAdding(value => !value)}><Plus size={16}/>{adding ? 'Close form' : 'Add new item'}</button>}/>{adding && <NewProductForm categories={categories} onCancel={() => setAdding(false)}/>}<div className="toolbar"><div className="search"><Search size={17}/><label className="sr-only" htmlFor="inventory-search">Search all products</label><input id="inventory-search" placeholder="Search any product, SKU, or size…" value={query} onChange={event => setQuery(event.target.value)}/>{search && <button className="search-clear" aria-label="Clear search" onClick={() => setQuery('')}><X size={16}/></button>}</div></div>{search ? <><div className="result-note">{results.length ? `${results.length} product style${results.length === 1 ? '' : 's'} across the catalogue` : 'No products match that search.'}</div>{results.length ? <div className="product-group-grid">{results.map(group => <ProductGroupCard key={group.key} group={group} canManage={canManage} categoryLabel={categoryOf.get(group.variants[0].categoryId)}/>)}</div> : <div className="empty-state"><Package size={24}/><strong>Nothing found.</strong><span>Try a SKU, a size, or part of the product name.</span></div>}</> : <><div className="inventory-summary"><div><span>Total remaining</span><strong>{totalRemaining}</strong></div><div><span>Product styles</span><strong>{allGroups.length}</strong></div><div><span>Categories</span><strong>{categories.length}</strong></div></div><div className="category-catalog">{categories.map(category => { const items = products.filter(product => product.categoryId === category.id); const styles = groupProducts(items); const onHand = items.reduce((sum, product) => sum + product.qty, 0); return <button className="category-card" key={category.id} onClick={() => navigate(`/inventory/category/${category.id}`)}><span className="category-card-icon"><Boxes size={21}/></span><span className="category-card-copy"><strong>{friendlyCategory(category.name)}</strong><small>{styles.length} styles · {items.length} size variants</small></span><span className="category-card-value"><strong>{onHand}</strong><small>remaining</small></span><ArrowRight size={18}/></button>; })}</div></>}</div>;
+  return <div className="content">
+    <PageHead eyebrow="Operations · Inventory" title="Inventory" copy="Open a category to browse by style and size." action={canManage && <button className="button button-primary" onClick={() => setAdding(value => !value)}><Plus size={16}/>{adding ? 'Close form' : 'Add new item'}</button>}/>
+    {toggle}
+    {adding && <NewProductForm categories={categories} onCancel={() => setAdding(false)}/>}
+    <div className="inventory-summary">
+      <div><span>Total remaining</span><strong>{totalRemaining}</strong></div>
+      <div><span>Product styles</span><strong>{allGroups.length}</strong></div>
+      <div><span>Categories</span><strong>{categories.length}</strong></div>
+    </div>
+    <div className="cat-grid">{categories.map(category => {
+      const items = products.filter(product => product.categoryId === category.id);
+      const styles = groupProducts(items);
+      const onHand = items.reduce((sum, product) => sum + product.qty, 0);
+      const photo = categoryPhoto(items);
+      return <button className="cat-tile" key={category.id} onClick={() => navigate(`/inventory/category/${category.id}`)}>
+        <span className="cat-tile-photo">
+          {photo ? <img src={photo} alt="" loading="lazy"/> : <span className="cat-tile-empty"><Boxes size={22}/></span>}
+          <span className="cat-tile-count">{onHand}</span>
+        </span>
+        <span className="cat-tile-name">{friendlyCategory(category.name)}</span>
+        <span className="cat-tile-meta">{styles.length} styles · {items.length} sizes</span>
+      </button>;
+    })}</div>
+  </div>;
 }
 
 const friendlyCategory = (name: string) => name === 'BINDINGS' ? 'Boots / Bindings' : name === 'OUTWEAR' ? 'Outerwear' : name.charAt(0) + name.slice(1).toLowerCase();
