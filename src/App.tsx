@@ -34,7 +34,6 @@ import { DataProblems } from './DataProblems';
 import { LiveOverview } from './LiveOverview';
 import { TeamAllocation } from './TeamAllocation';
 import { StaffHome, StaffHomeView } from './StaffHome';
-import './inventory.css';
 import { formatPeso, marginFor, periodLabelOf, reportingPeriod, saleTime, salesForPeriod, saleTotal, statusFor, type Status } from './domain';
 import { catalogPhoto } from './productPhotos';
 import { shopRepository } from './repository';
