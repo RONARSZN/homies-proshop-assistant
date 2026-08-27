@@ -265,7 +265,7 @@ export const shopRepository: ShopRepository = {
   },
 
   async createReservation(items, customerName, note, expiresAt) {
-    const { data, error } = await supabase.rpc('create_reservation', { p_items: items, p_customer_name: customerName, p_note: note, p_expires_at: expiresAt });
+    const { data, error } = await supabase.rpc('create_reservation', { p_items: items.map(item => ({ product_id: item.productId, qty: item.qty })), p_customer_name: customerName, p_note: note, p_expires_at: expiresAt });
     fail('Reservation could not be created', error);
     return String(data);
   },
