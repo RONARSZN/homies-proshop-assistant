@@ -120,7 +120,6 @@ export type StockMovement = {
   referenceId: string | null;
   note: string | null;
   createdAt: string;
-  riderId: string | null;
 };
 
 export type TeamRider = {

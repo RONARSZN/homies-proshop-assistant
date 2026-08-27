@@ -195,9 +195,9 @@ export const shopRepository: ShopRepository = {
   getLastRefresh() { return lastRefresh; },
 
   async getMovements(productId) {
-    const { data, error } = await supabase.from('stock_movements').select('id,product_id,delta,reason,reference_id,note,created_at,rider_id').eq('product_id', productId).order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('stock_movements').select('id,product_id,delta,reason,reference_id,note,created_at').eq('product_id', productId).order('created_at', { ascending: false });
     fail('Movement history could not be loaded', error);
-    return (data || []).map(row => ({ id: row.id, productId: row.product_id, delta: row.delta, reason: row.reason, referenceId: row.reference_id, note: row.note, createdAt: row.created_at, riderId: row.rider_id ?? null }));
+    return (data || []).map(row => ({ id: row.id, productId: row.product_id, delta: row.delta, reason: row.reason, referenceId: row.reference_id, note: row.note, createdAt: row.created_at }));
   },
 
   async addMovement(productId, delta, reason, note) {
