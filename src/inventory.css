@@ -281,3 +281,69 @@
   .pcard-facts { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
   .pcard-facts strong { font-size: 13px; }
 }
+
+/* --------------------------------------------- product detail additions */
+
+/* Sizes on the detail page navigate rather than select: each size is its own
+   product row with its own stock and price, so it gets its own URL. */
+.detail-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px 0 4px;
+}
+.detail-sizes .pcard-size { min-height: 40px; }
+
+/* Thumbnail rail. Sits over the hero on wide screens the way the reference
+   does, and drops below it on phones where there is no room beside. */
+.gallery-stage { position: relative; }
+.gallery-rail {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.gallery-thumb {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-tile);
+  background: var(--photo-bg);
+}
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.gallery-thumb.is-on { border-color: var(--red); border-width: 2px; }
+
+@media (max-width: 860px) {
+  .gallery-rail {
+    position: static;
+    flex-direction: row;
+    margin-top: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .gallery-rail::-webkit-scrollbar { display: none; }
+  .gallery-thumb { flex: none; }
+
+  /* The two actions become the reference's pinned bar. It clears the bottom
+     nav and the home indicator; without the inset it sits under both. */
+  .product-buy-actions {
+    position: fixed;
+    z-index: 7;
+    left: 0;
+    right: 0;
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    gap: 8px;
+    margin: 0;
+    padding: 10px 16px;
+    border-top: 1px solid var(--line-2);
+    background: var(--surface);
+  }
+  .product-buy-actions .button { flex: 1; min-height: 48px; }
+  /* Nothing should end up underneath the pinned bar. */
+  .product-page { padding-bottom: 96px; }
+}
