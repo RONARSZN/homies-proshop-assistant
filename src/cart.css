@@ -1,0 +1,109 @@
+/* ------------------------------------------------------------------
+   Cart — the reference's basket sheet in counter-poster language.
+   Reuses .sheet-backdrop / .sheet / .sheet-head / .sheet-close from
+   styles.css; only what the cart adds is written here.
+   ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------- topbar button */
+
+.cart-button {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 0 15px;
+  border: 1px solid var(--line-2); border-radius: var(--r-pill);
+  background: var(--surface); color: var(--ink);
+  font-size: 13px; font-weight: 700;
+}
+.cart-button:hover { background: var(--surface-2); }
+.cart-button.has-items { border-color: var(--red); color: var(--red); }
+/* The count is the reason to look at this control, so it rides the corner the
+   way the reference does rather than sitting inside the label. */
+.cart-count {
+  position: absolute; top: -5px; right: -4px;
+  min-width: 20px; height: 20px; padding: 0 5px;
+  display: grid; place-items: center;
+  border-radius: var(--r-pill);
+  background: var(--red); color: var(--paper);
+  font: 500 11px var(--mono); font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------- cart sheet */
+
+.cart-sheet { width: min(520px, 100%); }
+.cart-lines-sheet { overflow-y: auto; display: grid; padding-right: 6px; }
+.cart-line {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto 34px;
+  gap: 12px; align-items: center;
+  padding: 12px 0; border-top: 1px solid var(--line);
+}
+.cart-line:first-child { border-top: 0; }
+.cart-line-photo {
+  width: 44px; height: 44px; flex: none;
+  border-radius: var(--r-tile); object-fit: cover; background: var(--photo-bg);
+}
+.cart-line-photo.empty {
+  display: grid; place-items: center;
+  background: transparent; border: 1px dashed var(--dash); color: var(--muted);
+}
+.cart-line-name { min-width: 0; }
+.cart-line-name strong { display: block; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+.cart-line-name small { display: block; margin-top: 3px; color: var(--muted); font: 400 11px var(--mono); }
+.cart-line-warn { display: block; margin-top: 3px; color: var(--ember-ink); font: 400 11px var(--mono); font-style: normal; }
+.cart-line.is-missing { grid-template-columns: minmax(0, 1fr) 34px; }
+
+/* Quantity stepper, straight from the reference's detail screen. Square
+   corners on the readout, pills on the two controls — same rule as everywhere
+   else: type is printed, controls are rounded. */
+.cart-step { display: inline-flex; align-items: center; gap: 2px; }
+.cart-step button {
+  width: 32px; height: 32px; display: grid; place-items: center;
+  border: 1px solid var(--line-2); border-radius: var(--r-pill);
+  background: var(--surface-2); color: var(--ink);
+}
+.cart-step button:disabled { opacity: 0.4; cursor: default; }
+.cart-step b {
+  min-width: 34px; text-align: center;
+  font: 500 14px var(--mono); font-variant-numeric: tabular-nums;
+}
+.cart-line-total { font: 500 13px var(--mono); text-align: right; white-space: nowrap; }
+.cart-line-remove {
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted);
+}
+.cart-line-remove:hover { background: var(--surface-2); color: var(--red); }
+
+.cart-totals { margin-top: 14px; padding-top: 4px; }
+.cart-totals > div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 9px 0; border-top: 1px solid var(--line);
+}
+.cart-totals span { color: var(--muted); font: 400 11px var(--mono); letter-spacing: 0.09em; text-transform: uppercase; }
+.cart-totals strong { font: 500 14px var(--mono); font-variant-numeric: tabular-nums; }
+.cart-totals .is-total { border-top: 1px solid var(--ink); }
+.cart-totals .is-total span { color: var(--ink); }
+.cart-totals .is-total strong { font-size: 20px; }
+
+.cart-checkout { width: 100%; min-height: 54px; margin-top: 14px; }
+.cart-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+
+@media (max-width: 680px) {
+  /* Bottom sheet on a phone, exactly as the reference has it. */
+  .sheet-backdrop:has(.cart-sheet) { place-items: end center; padding: 0; }
+  .cart-sheet {
+    width: 100%; max-height: 88vh;
+    /* R6: corners stay at the app's 4px card radius, never the reference's
+       14px — the grab-handle sheet position already reads as a bottom sheet
+       without breaking the corner rule. */
+    border-radius: var(--r-card);
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .cart-line { grid-template-columns: 44px minmax(0, 1fr) 34px; gap: 8px 12px; }
+  .cart-line-photo { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+  .cart-line-name { grid-column: 2; grid-row: 1; }
+  .cart-step { grid-column: 2; grid-row: 2; }
+  .cart-line-total { grid-column: 3; grid-row: 1; }
+  .cart-line-remove { grid-column: 3; grid-row: 2; justify-self: end; }
+  .cart-button span { display: none; }
+  .cart-button { padding: 0 12px; }
+}
