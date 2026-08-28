@@ -139,10 +139,12 @@
   -webkit-tap-highlight-color: transparent;
   text-align: left;
 }
+/* Taller than square, as the reference has it — a browse tile is mostly
+   photograph, and these are tall objects besides. */
 .pcard-photo {
   position: relative;
   display: block;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 5;
   background: var(--photo-bg);
   border-bottom: 1px solid var(--line);
 }
@@ -197,6 +199,40 @@
 }
 .pcard-badge.is-low { background: var(--ember); color: #fff; }
 .pcard-badge.is-out { background: var(--ink); color: var(--paper); }
+
+/* The pin has to sit over the photo without being inside the card's open
+   button, so the frame is the positioning context for both. */
+.pcard-frame { position: relative; }
+.pcard-pin {
+  position: absolute; top: 8px; right: 8px;
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border: 1px solid var(--line-2); border-radius: var(--r-pill);
+  background: var(--surface); color: var(--muted);
+}
+.pcard-pin:hover { color: var(--ink); }
+.pcard-pin.is-on { border-color: var(--red); background: var(--red); color: var(--paper); }
+
+.pcard-open-text { display: block; }
+/* Name left, price right, baselines aligned — the reference's footer row. */
+.pcard-headline { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.pcard-headline strong { min-width: 0; }
+.pcard-price { flex: none; text-align: right; }
+.pcard-price small {
+  display: block; color: var(--muted);
+  font: 400 9px var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+}
+.pcard-price b {
+  display: block; margin-top: 2px; color: var(--ink);
+  font: 500 13px var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.pcard-open:hover .pcard-price b { color: var(--red); }
+
+.pcard-actions { display: flex; gap: 6px; padding: 8px 14px 0; }
+.pcard-add, .pcard-edit {
+  flex: 1; width: auto; min-height: 40px; margin: 0; padding: 0 12px;
+  font: 500 11px var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+}
+.pcard-edit { flex: 0 0 auto; }
 
 .pcard-title { display: block; padding: 12px 14px 0; }
 .pcard-cat {
@@ -287,17 +323,6 @@
   text-align: right;
 }
 .pcard .reserved-indicator { margin: 0 14px; }
-/* The shared .button is sized for full-width rows and its label ran past both
-   edges of a card this narrow. */
-.pcard-edit {
-  width: calc(100% - 28px);
-  margin: 4px 14px 0;
-  min-height: 40px;
-  padding: 0 12px;
-  font: 500 11px var(--mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
 
 @media (max-width: 860px) {
   .cat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

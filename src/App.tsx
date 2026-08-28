@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import Bookmark from 'lucide-react/dist/esm/icons/bookmark.mjs';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
 import Camera from 'lucide-react/dist/esm/icons/camera.mjs';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.mjs';
@@ -44,6 +45,7 @@ import { PeriodProvider, usePeriod } from './usePeriod';
 import { buildSalesSheet, downloadSheet, sheetFilename, type SheetSections } from './exportSheet';
 import { availableOf, lineTotal } from './cart';
 import { useCart } from './useCart';
+import { usePins } from './usePins';
 import type { Category, Note, Period, Product, ProductInput, Sale, StockMovement } from './types';
 
 const adminNav = [['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', Tag], ['/reservations', 'Reservations', CalendarClock], ['/team', 'Team', Users], ['/notes', 'Notes', ClipboardList]] as const;
@@ -254,29 +256,52 @@ const groupProducts = (products: Product[]): ProductGroup[] => {
 const sizedName = (name: string, size: string | null | undefined) => size && size !== '—' ? `${name} · ${size}` : name;
 
 /* Photo-first card. The whole tile is the way into the product page, so the
-   photo and the name share one button; the size pills sit outside it, because
-   a button nested inside a button is invalid and screen readers drop it. */
+   photo and the name share one button; the pin, the size pills and the cart
+   action sit outside it, because a button nested inside a button is invalid
+   and screen readers drop it. */
 function ProductGroupCard({ group, canManage, displayName, categoryLabel }: { group: ProductGroup; canManage: boolean; displayName?: string; categoryLabel?: string }) {
   const [selectedId, setSelectedId] = useState(group.variants[0].id);
+  const { isPinned, toggle } = usePins();
+  const { add, openCart } = useCart();
   const selected = group.variants.find(product => product.id === selectedId) || group.variants[0];
   const remaining = group.variants.reduce((sum, product) => sum + product.qty, 0);
   const status = statusFor(selected);
   const photo = selected.imageUrl || catalogPhoto(selected);
   const badge = status === 'Out of Stock' ? 'OUT' : status === 'Low Stock' ? 'LOW' : null;
+  const sellable = selected.price !== null && availableOf(selected) > 0;
+  const pinned = isPinned(selected.id);
   return <article className="pcard">
-    <button type="button" className="pcard-open" onClick={() => navigate(`/inventory/${selected.id}`)}>
-      <span className="pcard-photo">
-        {photo
-          ? <img src={photo} alt="" loading="lazy"/>
-          : <span className="pcard-photo-empty"><b>{selected.sku}</b><small>no photo yet</small></span>}
-        {badge && <span className={`pcard-badge is-${badge.toLowerCase()}`}>{badge}</span>}
-      </span>
+    <div className="pcard-frame">
+      <button type="button" className="pcard-open" onClick={() => navigate(`/inventory/${selected.id}`)}>
+        <span className="pcard-photo">
+          {photo
+            ? <img src={photo} alt="" loading="lazy"/>
+            : <span className="pcard-photo-empty"><b>{selected.sku}</b><small>no photo yet</small></span>}
+          {badge && <span className={`pcard-badge is-${badge.toLowerCase()}`}>{badge}</span>}
+        </span>
+      </button>
+      {/* Sibling of .pcard-open, absolutely placed over its corner — the
+          reference's heart, doing the job a counter actually has. */}
+      <button
+        type="button"
+        className={`pcard-pin ${pinned ? 'is-on' : ''}`}
+        aria-pressed={pinned}
+        aria-label={pinned ? `Unpin ${group.name}` : `Pin ${group.name}`}
+        onClick={() => toggle(selected.id)}
+      ><Bookmark size={15}/></button>
+    </div>
+
+    <button type="button" className="pcard-open pcard-open-text" onClick={() => navigate(`/inventory/${selected.id}`)}>
       <span className="pcard-title">
         {categoryLabel && <small className="pcard-cat">{categoryLabel}</small>}
-        <strong>{displayName || group.name}</strong>
+        <span className="pcard-headline">
+          <strong>{displayName || group.name}</strong>
+          <span className="pcard-price"><small>Price</small><b>{formatPeso(selected.price)}</b></span>
+        </span>
         <small className="pcard-brand">{group.brand}{group.color !== '—' ? ` · ${group.color}` : ''}</small>
       </span>
     </button>
+
     {group.variants.length > 1 && <div className="pcard-sizes" role="group" aria-label={`Select a size of ${group.name}`}>
       {group.variants.map(product => <button
         key={product.id}
@@ -286,13 +311,18 @@ function ProductGroupCard({ group, canManage, displayName, categoryLabel }: { gr
         onClick={() => setSelectedId(product.id)}
       >{product.size}</button>)}
     </div>}
+
     <div className="pcard-facts">
       <div className="pcard-fact"><span>Size {selected.size}</span><strong>{selected.qty} left</strong></div>
       <div className="pcard-fact"><span>All sizes</span><strong>{remaining}</strong></div>
-      <div className="pcard-fact"><span>Price</span><strong>{formatPeso(selected.price)}</strong></div>
     </div>
     {selected.reservedQty > 0 && <span className="reserved-indicator">Reserved {selected.reservedQty}</span>}
-    {canManage && <button className="button button-dark pcard-edit" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit item</button>}
+    <div className="pcard-actions">
+      <button className="button button-primary pcard-add" disabled={!sellable} onClick={() => { add(selected); openCart(); }}>
+        {sellable ? 'Add to sale' : 'Unavailable'}
+      </button>
+      {canManage && <button className="button button-dark pcard-edit" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit</button>}
+    </div>
   </article>;
 }
 
