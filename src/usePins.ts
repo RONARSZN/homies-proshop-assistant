@@ -40,6 +40,9 @@ export function usePins() {
 
 // Test-only reset: the module-level `snapshot` above is initialised once at
 // import time, so clearing localStorage in a test's beforeEach does not put
-// the hook back to empty. Without this, suite correctness would depend on
-// test order. Keep it — it is not dead code.
-export const __resetPinsForTest = () => write(new Set());
+// the hook back in sync with it. This re-reads storage into `snapshot` (going
+// through the same read() used at import) and notifies listeners, rather than
+// just blanking snapshot, so tests can force the module to pick up whatever
+// is actually in storage — including corrupt data or a prior write. Keep it —
+// it is not dead code.
+export const __resetPinsForTest = () => { snapshot = read(); listeners.forEach(listener => listener()); };
