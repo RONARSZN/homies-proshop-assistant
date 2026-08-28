@@ -543,6 +543,7 @@ button { cursor: pointer; }
 .sales-list > button > strong { font: 500 15px var(--mono); font-variant-numeric: tabular-nums; }
 .sales-list svg { color: var(--muted); transform: rotate(-90deg); }
 .sales-records { display: grid; gap: 14px; margin-top: 14px; }
+.record-toggle-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; margin-left: 6px; padding: 0 4px; border-radius: var(--r-pill); background: var(--red); color: var(--paper); font: 600 10px var(--mono); }
 .staff-today-sales { display: grid; gap: 14px; margin-top: 14px; }
 .pos-workspace-panel { margin-top: 14px; }
 .staff-today-sales .card { padding: 14px; }
