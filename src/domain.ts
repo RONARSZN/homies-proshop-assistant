@@ -14,6 +14,8 @@ export const statusFor = (product: Product): Status => {
 };
 export const marginFor = (product: Product) => product.cost === null || product.cost === 0 || product.price === null ? null : product.price - product.cost;
 export const saleTotal = (sale: Sale) => sale.total;
+const manilaDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' });
+export const manilaDateOf = (value: Date | string) => manilaDateFormatter.format(new Date(value));
 
 /* ------------------------------------------------------------- model years
    The model year is not a column. It lives as a "2026 " prefix on the product

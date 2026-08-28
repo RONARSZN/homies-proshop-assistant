@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { downscaleImage } from './image';
+import { manilaDateOf } from './domain';
 import type { CartLine, Category, Product, ProductInput, Reservation, RiderAllocation, Sale, SalePayment, StockMovement, TeamRider } from './types';
 
 const PHOTO_BUCKET = 'product-photos';
@@ -160,7 +161,7 @@ export const shopRepository: ShopRepository = {
       const paymentStatus = row.total === null || amountPaid === null ? 'not-captured' : balanceDue === 0 ? 'paid' : amountPaid === 0 ? 'unpaid' : 'partial';
       return {
         id: row.id,
-        date: row.sold_at.slice(0, 10),
+        date: manilaDateOf(row.sold_at),
         soldAt: row.sold_at,
         product: items.length === 1 ? items[0].description : `${items.length} items`,
         sku: firstProduct?.sku || first?.description || '—',

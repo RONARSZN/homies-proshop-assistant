@@ -39,7 +39,7 @@ import { DataProblems } from './DataProblems';
 import { LiveOverview } from './LiveOverview';
 import { TeamAllocation } from './TeamAllocation';
 import { StaffHome, StaffHomeView } from './StaffHome';
-import { byModelYearThenName, formatPeso, marginFor, modelYearOf, periodLabelOf, reportingPeriod, saleTime, salesForPeriod, saleTotal, statusFor, type Status } from './domain';
+import { byModelYearThenName, formatPeso, manilaDateOf, marginFor, modelYearOf, periodLabelOf, reportingPeriod, saleTime, salesForPeriod, saleTotal, statusFor, type Status } from './domain';
 import { catalogPhoto } from './productPhotos';
 import { shopRepository } from './repository';
 import { ShopDataProvider, useShopData } from './useShopData';
@@ -574,13 +574,8 @@ function SalesWorkspace() {
   return <div className="content"><PageHead eyebrow={isAdmin ? 'Operations · Sales' : 'Staff · Sale'} title={isAdmin ? 'Sales' : 'Sale'} copy={isAdmin ? 'Ring up a sale, then reveal the records only when you need them.' : 'Build a customer sale with the shared cart.'} action={<div className="sales-head-actions"><button className="button button-dark sale-cart-button" aria-label={`Open sale cart, ${count} unit${count === 1 ? '' : 's'}`} onClick={openCart}><ShoppingCart size={16}/>Cart{count > 0 && <b>{count}</b>}</button>{isAdmin && <button className="button button-dark" aria-expanded={showRecords} onClick={() => setShowRecords(value => !value)}>{showRecords ? 'Hide sale records' : 'Show sale records'}</button>}</div>}/>{isAdmin ? <><Pos embedded/>{showRecords && <SalesRecords/>}</> : <><StaffTodaySales sales={sales}/><Pos embedded/></>}</div>;
 }
 
-const manilaToday = () => {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
-  return `${parts.find(part => part.type === 'year')?.value}-${parts.find(part => part.type === 'month')?.value}-${parts.find(part => part.type === 'day')?.value}`;
-};
-
 function StaffTodaySales({ sales }: { sales: Sale[] }) {
-  const today = sales.filter(sale => sale.date === manilaToday());
+  const today = sales.filter(sale => sale.date === manilaDateOf(new Date()));
   return <section className="staff-today-sales"><div className="card-head"><div><h2>Today&apos;s sales</h2><span>Read-only counter activity · {today.length} sale{today.length === 1 ? '' : 's'}</span></div></div><div className="card"><div className="sales-list">{today.map(sale => <div className="staff-sale-row" key={sale.id}><span className="sale-date">{saleTime(sale) || 'Time not recorded'}</span><span><strong>{sale.product}</strong><small>{sale.qty} unit{sale.qty === 1 ? '' : 's'} · {sale.status} · {sale.sellerName || 'Unknown seller'}</small></span><strong>{formatPeso(sale.total)}</strong></div>)}{!today.length && <p className="empty-copy">No sales recorded today.</p>}</div></div></section>;
 }
 
