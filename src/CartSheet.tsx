@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Minus from 'lucide-react/dist/esm/icons/minus.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Plus from 'lucide-react/dist/esm/icons/plus.mjs';
@@ -15,6 +16,14 @@ import { useShopData } from './useShopData';
 export function CartSheet({ onCheckout }: { onCheckout: () => void }) {
   const { lines, open, subtotal, count, setQty, remove, closeCart } = useCart();
   const { products } = useShopData();
+  // Same Escape-to-close pattern as ExportDialog and LiveOverview's expanded
+  // view: every other .sheet-backdrop dialog in this app closes on Escape,
+  // so this one has to as well.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') closeCart(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [closeCart]);
   if (!open) return null;
   const discount = lines.reduce((sum, line) => sum + line.discount, 0);
   return <div className="sheet-backdrop" onClick={closeCart}>

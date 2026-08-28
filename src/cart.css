@@ -99,11 +99,16 @@
     padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   }
   .cart-line { grid-template-columns: 44px minmax(0, 1fr) 34px; gap: 8px 12px; }
-  .cart-line-photo { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
-  .cart-line-name { grid-column: 2; grid-row: 1; }
-  .cart-step { grid-column: 2; grid-row: 2; }
-  .cart-line-total { grid-column: 3; grid-row: 1; }
-  .cart-line-remove { grid-column: 3; grid-row: 2; justify-self: end; }
+  /* Scoped to :not(.is-missing): the stale-line row keeps its own two-column
+     template (set above, outside this media query, at higher specificity)
+     and its two children (name, remove) in normal grid flow. Without this
+     scoping these unscoped child rules would still reposition the stale
+     row's children into a template it does not have — see fix-round-1. */
+  .cart-line:not(.is-missing) .cart-line-photo { grid-column: 1; grid-row: 1 / span 2; align-self: center; }
+  .cart-line:not(.is-missing) .cart-line-name { grid-column: 2; grid-row: 1; }
+  .cart-line:not(.is-missing) .cart-step { grid-column: 2; grid-row: 2; }
+  .cart-line:not(.is-missing) .cart-line-total { grid-column: 3; grid-row: 1; }
+  .cart-line:not(.is-missing) .cart-line-remove { grid-column: 3; grid-row: 2; justify-self: end; }
   .cart-button span { display: none; }
   .cart-button { padding: 0 12px; }
 }
