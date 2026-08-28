@@ -29,7 +29,7 @@ export default defineConfig({
     react(),
     sites(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: false,
       workbox: {
