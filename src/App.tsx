@@ -48,6 +48,7 @@ import { buildSalesSheet, downloadSheet, sheetFilename, type SheetSections } fro
 import { availableOf, cartLineIssue, lineTotal } from './cart';
 import { useCart } from './useCart';
 import { usePins } from './usePins';
+import { useSwipeNavigation } from './useSwipeNavigation';
 import type { Category, Note, Period, Product, ProductInput, Sale, StockMovement } from './types';
 
 const adminNav = [['/', 'Overview', LayoutDashboard], ['/inventory', 'Inventory', Boxes], ['/sales', 'Sales', Tag], ['/reservations', 'Reservations', CalendarClock], ['/team', 'Team', Users], ['/notes', 'Notes', ClipboardList]] as const;
@@ -362,11 +363,15 @@ function Inventory() {
   const [adding, setAdding] = useState(false);
   const canManage = profile?.role === 'admin';
   const toggle = <InventoryModeToggle mode={mode} onChange={setMode}/>;
+  const swipe = useSwipeNavigation(
+    () => setMode('categories'),
+    () => setMode('search'),
+  );
 
   /* Search is the question the counter actually asks, so admins open on the
      same catalogue screen staff get — minus the rule that hides a styled-out
      size, because for an admin that row is usually the reason they came. */
-  if (mode === 'search') return <StaffHomeView
+  if (mode === 'search') return <div className="swipe-surface" {...swipe}><StaffHomeView
     products={products}
     loading={loading}
     error={error}
@@ -374,13 +379,13 @@ function Inventory() {
     includeOutOfStock
     beforeSearch={toggle}
     onOpenProduct={id => navigate(`/inventory/${id}`)}
-  />;
+  /></div>;
 
   if (loading) return <LoadingState/>;
   if (error) return <ErrorState error={error}/>;
   const totalRemaining = products.reduce((sum, product) => sum + product.qty, 0);
   const allGroups = groupProducts(products);
-  return <div className="content">
+  return <div className="content swipe-surface" {...swipe}>
     <PageHead eyebrow="Operations · Inventory" title="Inventory" copy="Open a category to browse by style and size." action={canManage && <button className="button button-primary" onClick={() => setAdding(value => !value)}><Plus size={16}/>{adding ? 'Close form' : 'Add new item'}</button>}/>
     {toggle}
     {adding && <NewProductForm categories={categories} onCancel={() => setAdding(false)}/>}
@@ -413,6 +418,7 @@ function CategoryInventory({ id }: { id: string }) {
   const { profile } = useAuth();
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(false);
+  const swipe = useSwipeNavigation(() => {}, () => navigate('/inventory'));
   if (loading) return <LoadingState/>;
   if (error) return <ErrorState error={error}/>;
   const category = categories.find(item => item.id === id);
@@ -438,7 +444,7 @@ function CategoryInventory({ id }: { id: string }) {
   const productGroups = category.name === 'BOARDS'
     ? <div className="product-year-list">{boardYears.map(section => <section className="product-year-section" key={section.year}><div className="product-year-head"><h2>{section.year}</h2><span>{section.groups.length} style{section.groups.length === 1 ? '' : 's'}</span></div><div className="product-group-grid">{section.groups.map(group => <ProductGroupCard key={group.key} group={group} canManage={canManage} displayName={group.name.replace(boardYearPattern, '')}/>)}</div></section>)}</div>
     : <div className="product-group-grid">{filtered.map(group => <ProductGroupCard key={group.key} group={group} canManage={canManage}/>)}</div>;
-  return <div className="content"><button className="back-link" onClick={() => navigate('/inventory')}>← Back to categories</button><PageHead eyebrow="Inventory · Category" title={friendlyCategory(category.name)} copy={`${groups.length} product styles · ${items.length} size variants. Choose a size, then edit that exact inventory item.`} action={canManage && <button className="button button-primary" onClick={() => setAdding(value => !value)}><Plus size={16}/>{adding ? 'Close form' : 'Add new item'}</button>}/>{adding && <NewProductForm categories={categories} defaultCategoryId={category.id} onCancel={() => setAdding(false)}/>}<div className="category-summary"><div><span>Total remaining</span><strong>{remaining}</strong></div><div><span>Product styles</span><strong>{groups.length}</strong></div></div><div className="toolbar category-toolbar"><div className="search"><Search size={17}/><label className="sr-only" htmlFor="category-search">Search this category</label><input id="category-search" placeholder={`Search ${friendlyCategory(category.name).toLowerCase()}…`} value={query} onChange={event => setQuery(event.target.value)}/></div></div>{filtered.length ? productGroups : <div className="empty-state"><Package size={24}/><strong>No products match this search.</strong></div>}<div className="table-footer"><span>Showing {filtered.length} of {groups.length} product styles</span></div></div>;
+  return <div className="content swipe-surface" {...swipe}><button className="back-link" onClick={() => navigate('/inventory')}>← Back to categories</button><PageHead eyebrow="Inventory · Category" title={friendlyCategory(category.name)} copy={`${groups.length} product styles · ${items.length} size variants. Choose a size, then edit that exact inventory item.`} action={canManage && <button className="button button-primary" onClick={() => setAdding(value => !value)}><Plus size={16}/>{adding ? 'Close form' : 'Add new item'}</button>}/>{adding && <NewProductForm categories={categories} defaultCategoryId={category.id} onCancel={() => setAdding(false)}/>}<div className="category-summary"><div><span>Total remaining</span><strong>{remaining}</strong></div><div><span>Product styles</span><strong>{groups.length}</strong></div></div><div className="toolbar category-toolbar"><div className="search"><Search size={17}/><label className="sr-only" htmlFor="category-search">Search this category</label><input id="category-search" placeholder={`Search ${friendlyCategory(category.name).toLowerCase()}…`} value={query} onChange={event => setQuery(event.target.value)}/></div></div>{filtered.length ? productGroups : <div className="empty-state"><Package size={24}/><strong>No products match this search.</strong></div>}<div className="table-footer"><span>Showing {filtered.length} of {groups.length} product styles</span></div></div>;
 }
 
 /* `template` carries an existing item in so a new size can be added without
@@ -478,6 +484,10 @@ function ProductDetail({ id }: { id: string }) {
   const { add, openCart } = useCart();
   const [qty, setQty] = useState(1);
   useEffect(() => setQty(1), [id]);
+  const swipe = useSwipeNavigation(() => {
+    const current = products.find(item => item.id === id);
+    if (current) navigate(`/inventory/category/${current.categoryId}`);
+  }, () => {});
   const product = products.find(item => item.id === id);
   if (loading) return <LoadingState/>;
   if (error) return <ErrorState error={error}/>;
@@ -504,7 +514,7 @@ function ProductDetail({ id }: { id: string }) {
     .forEach(item => {
       if (!colourways.some(entry => entry.colour.toLowerCase() === item.color.toLowerCase())) colourways.push({ id: item.id, colour: item.color });
     });
-  return <div className="content product-page">
+  return <div className="content product-page swipe-surface" {...swipe}>
     <div className="product-hero-bar">
       <button className="hero-round" aria-label="Back to inventory" onClick={() => navigate('/inventory')}><ArrowLeft size={18}/></button>
       <span className="hero-title">Details</span>
@@ -553,10 +563,11 @@ function ProductEditor({ product, categories, onSaved }: { product: Product; cat
 
 function SalesWorkspace() {
   const { loading, error } = useShopData();
+  const { count, openCart } = useCart();
   const [showRecords, setShowRecords] = useState(false);
   if (loading) return <LoadingState/>;
   if (error) return <ErrorState error={error}/>;
-  return <div className="content"><PageHead eyebrow="Operations · Sales" title="Sales" copy="Ring up a sale, then reveal the records only when you need them." action={<button className="button button-dark" aria-expanded={showRecords} onClick={() => setShowRecords(value => !value)}>{showRecords ? 'Hide sale records' : 'Show sale records'}</button>}/><Pos embedded/>{showRecords && <SalesRecords/>}</div>;
+  return <div className="content"><PageHead eyebrow="Operations · Sales" title="Sales" copy="Ring up a sale, then reveal the records only when you need them." action={<div className="sales-head-actions"><button className="button button-dark sale-cart-button" aria-label={`Open sale cart, ${count} unit${count === 1 ? '' : 's'}`} onClick={openCart}><ShoppingCart size={16}/>Cart{count > 0 && <b>{count}</b>}</button><button className="button button-dark" aria-expanded={showRecords} onClick={() => setShowRecords(value => !value)}>{showRecords ? 'Hide sale records' : 'Show sale records'}</button></div>}/><Pos embedded/>{showRecords && <SalesRecords/>}</div>;
 }
 
 function SalesRecords() {

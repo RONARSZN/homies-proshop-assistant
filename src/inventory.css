@@ -8,6 +8,8 @@
 
 /* ------------------------------------------------------- mode toggle */
 
+.swipe-surface { touch-action: pan-y; }
+
 /* Two segments, not a switch: a switch implies on/off, and neither of
    these is the off state. */
 .mode-toggle {

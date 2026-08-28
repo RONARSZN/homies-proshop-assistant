@@ -315,6 +315,9 @@ button { cursor: pointer; }
   gap: 10px; margin-bottom: 16px;
 }
 .category-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sales-head-actions { display: flex; align-items: center; gap: 8px; }
+.sale-cart-button { display: inline-flex; align-items: center; gap: 8px; }
+.sale-cart-button b { min-width: 20px; padding: 2px 6px; border-radius: var(--r-pill); background: var(--red); color: var(--paper); font: 500 11px var(--mono); }
 .inventory-summary > div, .category-summary > div { background: var(--surface); border-radius: 4px; padding: 16px; }
 .inventory-summary span, .category-summary span {
   display: block; font: 500 11px var(--mono); color: var(--muted);
