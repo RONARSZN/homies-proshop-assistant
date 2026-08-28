@@ -544,6 +544,7 @@ button { cursor: pointer; }
 .sales-list svg { color: var(--muted); transform: rotate(-90deg); }
 .sales-records { display: grid; gap: 14px; margin-top: 14px; }
 .staff-today-sales { display: grid; gap: 14px; margin-top: 14px; }
+.pos-workspace-panel { margin-top: 14px; }
 .staff-sale-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: center; min-height: 56px; padding: 11px 0; border-top: 1px solid var(--line); }
 .staff-sale-row:first-child { border-top: 0; }
 .staff-sale-row > strong { font: 500 15px var(--mono); font-variant-numeric: tabular-nums; }
