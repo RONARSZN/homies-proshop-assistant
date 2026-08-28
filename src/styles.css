@@ -545,9 +545,21 @@ button { cursor: pointer; }
 .sales-records { display: grid; gap: 14px; margin-top: 14px; }
 .staff-today-sales { display: grid; gap: 14px; margin-top: 14px; }
 .pos-workspace-panel { margin-top: 14px; }
-.staff-sale-row { display: grid; grid-template-columns: 110px 1fr auto; gap: 12px; align-items: center; min-height: 56px; padding: 11px 0; border-top: 1px solid var(--line); }
-.staff-sale-row:first-child { border-top: 0; }
-.staff-sale-row > strong { font: 500 15px var(--mono); font-variant-numeric: tabular-nums; }
+.staff-today-sales .card { padding: 14px; }
+.staff-today-sales .sales-list { gap: 10px; }
+.staff-sale-row {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 16px; align-items: center;
+  min-height: 86px; padding: 16px 18px; border: 1px solid var(--line-2); border-left: 4px solid var(--red);
+  border-radius: var(--r-tile); background: var(--surface-2);
+}
+.staff-sale-row .sale-date { align-self: start; padding-top: 2px; color: var(--ink-2); }
+.staff-sale-row > span:nth-child(2) { min-width: 0; }
+.staff-sale-row > span:nth-child(2) strong { font-size: 16px; line-height: 1.15; }
+.staff-sale-row > span:nth-child(2) small + small { color: var(--ink-2); }
+.staff-sale-row > strong {
+  display: grid; gap: 4px; justify-items: end; font: 600 17px var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.staff-sale-row > strong::before { content: 'TOTAL'; font: 500 10px var(--mono); letter-spacing: .1em; color: var(--muted); }
 
 .receipt-parties { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 22px; padding-bottom: 16px; }
 .receipt-parties span { display: block; font-size: 12px; color: var(--muted); }
@@ -953,6 +965,9 @@ button { cursor: pointer; }
   .movement-list small { grid-column: 1 / -1; }
   .cart-lines > div { grid-template-columns: 1fr 1fr; }
   .cart-lines > div > span:first-child, .cart-lines b { grid-column: 1 / -1; }
+  .staff-sale-row { grid-template-columns: 78px minmax(0, 1fr) auto; gap: 10px; padding: 14px 12px; }
+  .staff-sale-row > span:nth-child(2) strong { font-size: 15px; }
+  .staff-sale-row > strong { font-size: 15px; }
   .sales-list button { grid-template-columns: 1fr auto; gap: 4px 12px; }
   .sale-date { grid-column: 1 / -1; }
   .sales-list svg { display: none; }
