@@ -36,6 +36,12 @@ describe('addLine', () => {
   it('refuses a product with nothing available', () => {
     expect(addLine([], product({ qty: 1, reservedQty: 1 }))).toEqual([]);
   });
+  it('ignores a request to add zero quantity', () => {
+    expect(addLine([], product(), 0)).toEqual([]);
+  });
+  it('ignores a request to add negative quantity', () => {
+    expect(addLine([], product(), -5)).toEqual([]);
+  });
 });
 
 describe('setLineQty', () => {
@@ -59,6 +65,10 @@ describe('setLineDiscount', () => {
   it('clamps a negative discount to zero', () => {
     const lines: CartLine[] = [{ productId: 'p1', qty: 1, unitPrice: 200, discount: 0 }];
     expect(setLineDiscount(lines, 'p1', -5)[0].discount).toBe(0);
+  });
+  it('treats NaN discount as zero', () => {
+    const lines: CartLine[] = [{ productId: 'p1', qty: 2, unitPrice: 200, discount: 0 }];
+    expect(setLineDiscount(lines, 'p1', NaN)[0].discount).toBe(0);
   });
 });
 

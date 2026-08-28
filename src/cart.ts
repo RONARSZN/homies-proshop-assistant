@@ -10,6 +10,7 @@ export const availableOf = (product: Product): number => Math.max(0, product.qty
    is already in the cart raises its quantity instead of opening a second row,
    which is what a counter expects when the same board is scanned twice. */
 export function addLine(lines: CartLine[], product: Product, qty = 1): CartLine[] {
+  if (qty <= 0) return lines;
   const available = availableOf(product);
   if (product.price === null || available === 0) return lines;
   const existing = lines.find(line => line.productId === product.id);
@@ -29,7 +30,7 @@ export function setLineQty(lines: CartLine[], productId: string, qty: number): C
 
 export function setLineDiscount(lines: CartLine[], productId: string, discount: number): CartLine[] {
   return lines.map(line => line.productId === productId
-    ? { ...line, discount: Math.min(Math.max(0, discount), line.qty * line.unitPrice) }
+    ? { ...line, discount: Math.min(Math.max(0, Number.isFinite(discount) ? discount : 0), line.qty * line.unitPrice) }
     : line);
 }
 
