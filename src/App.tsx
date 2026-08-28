@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import Bookmark from 'lucide-react/dist/esm/icons/bookmark.mjs';
 import Boxes from 'lucide-react/dist/esm/icons/boxes.mjs';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left.mjs';
 import Camera from 'lucide-react/dist/esm/icons/camera.mjs';
 import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down.mjs';
 import ClipboardList from 'lucide-react/dist/esm/icons/clipboard-list.mjs';
@@ -9,6 +10,7 @@ import Database from 'lucide-react/dist/esm/icons/database.mjs';
 import LayoutDashboard from 'lucide-react/dist/esm/icons/layout-dashboard.mjs';
 import LogOut from 'lucide-react/dist/esm/icons/log-out.mjs';
 import Menu from 'lucide-react/dist/esm/icons/menu.mjs';
+import Minus from 'lucide-react/dist/esm/icons/minus.mjs';
 import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Pin from 'lucide-react/dist/esm/icons/pin.mjs';
@@ -43,7 +45,7 @@ import { shopRepository } from './repository';
 import { ShopDataProvider, useShopData } from './useShopData';
 import { PeriodProvider, usePeriod } from './usePeriod';
 import { buildSalesSheet, downloadSheet, sheetFilename, type SheetSections } from './exportSheet';
-import { availableOf, lineTotal } from './cart';
+import { availableOf, cartLineIssue, lineTotal } from './cart';
 import { useCart } from './useCart';
 import { usePins } from './usePins';
 import type { Category, Note, Period, Product, ProductInput, Sale, StockMovement } from './types';
@@ -238,6 +240,14 @@ function Card({ title, meta, children, wide = false }: { title: string; meta?: s
 
 type ProductGroup = { key: string; name: string; brand: string; color: string; variants: Product[] };
 const productGroupKey = (product: Product) => [product.categoryId, product.name, product.brand, product.color].map(value => value.trim().toLowerCase()).join('|');
+
+const SWATCHES: Record<string, string> = {
+  black: '#101110', white: '#F4EFE6', red: '#9a0002', blue: '#2B4C7E', navy: '#1B2A44',
+  green: '#3F7F5C', yellow: '#E3B23C', orange: '#E4622B', pink: '#D97A9A', purple: '#6B4E8C',
+  grey: '#6E6A5F', gray: '#6E6A5F', brown: '#6B4A32', silver: '#B8B4AC', gold: '#B08D3F',
+};
+const colourSwatch = (name: string): string | null => SWATCHES[name.trim().toLowerCase()] ?? null;
+const styleKey = (product: Product) => [product.categoryId, product.name, product.brand].map(value => value.trim().toLowerCase()).join('|');
 const groupProducts = (products: Product[]): ProductGroup[] => {
   const groups = new Map<string, ProductGroup>();
   products.forEach(product => {
@@ -264,11 +274,11 @@ function ProductGroupCard({ group, canManage, displayName, categoryLabel }: { gr
   const { isPinned, toggle } = usePins();
   const { add, openCart } = useCart();
   const selected = group.variants.find(product => product.id === selectedId) || group.variants[0];
-  const remaining = group.variants.reduce((sum, product) => sum + product.qty, 0);
+  const remaining = group.variants.reduce((sum, product) => sum + availableOf(product), 0);
   const status = statusFor(selected);
   const photo = selected.imageUrl || catalogPhoto(selected);
   const badge = status === 'Out of Stock' ? 'OUT' : status === 'Low Stock' ? 'LOW' : null;
-  const sellable = selected.price !== null && availableOf(selected) > 0;
+  const sellable = canManage && selected.isActive && selected.price !== null && availableOf(selected) > 0;
   const pinned = isPinned(selected.id);
   return <article className="pcard">
     <div className="pcard-frame">
@@ -313,16 +323,16 @@ function ProductGroupCard({ group, canManage, displayName, categoryLabel }: { gr
     </div>}
 
     <div className="pcard-facts">
-      <div className="pcard-fact"><span>Size {selected.size}</span><strong>{selected.qty} left</strong></div>
+      <div className="pcard-fact"><span>Size {selected.size}</span><strong>{availableOf(selected)} left</strong></div>
       <div className="pcard-fact"><span>All sizes</span><strong>{remaining}</strong></div>
     </div>
     {selected.reservedQty > 0 && <span className="reserved-indicator">Reserved {selected.reservedQty}</span>}
-    <div className="pcard-actions">
+    {canManage && <div className="pcard-actions">
       <button className="button button-primary pcard-add" disabled={!sellable} onClick={() => { add(selected); openCart(); }}>
         {sellable ? 'Add to sale' : 'Unavailable'}
       </button>
-      {canManage && <button className="button button-dark pcard-edit" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit</button>}
-    </div>
+      <button className="button button-dark pcard-edit" onClick={() => navigate(`/inventory/${selected.id}`)}>Edit</button>
+    </div>}
   </article>;
 }
 
@@ -464,12 +474,16 @@ function ProductDetail({ id }: { id: string }) {
   // Declared above the early returns below: the loading and not-found paths
   // must not change how many hooks this component calls.
   const [addingSize, setAddingSize] = useState(false);
+  const { isPinned, toggle } = usePins();
+  const { add, openCart } = useCart();
+  const [qty, setQty] = useState(1);
+  useEffect(() => setQty(1), [id]);
   const product = products.find(item => item.id === id);
   if (loading) return <LoadingState/>;
   if (error) return <ErrorState error={error}/>;
   if (!product) return <NotFound title="Product not found" copy="That product is not in the live database." back="/inventory"/>;
   const canManage = profile?.role === 'admin';
-  const available = product.qty > product.reservedQty;
+  const available = availableOf(product);
   /* Other sizes of the same style. Same key the inventory grid groups by, so
      the two screens always agree on what counts as one product. */
   const siblings = products
@@ -483,12 +497,22 @@ function ProductDetail({ id }: { id: string }) {
     const photo = item.imageUrl || catalogPhoto(item);
     if (photo && !views.some(view => view.photo === photo)) views.push({ id: item.id, photo, size: item.size });
   });
+  const colourways: Array<{ id: string; colour: string }> = [];
+  products
+    .filter(item => styleKey(item) === styleKey(product) && item.color !== '—')
+    .sort((a, b) => a.color.localeCompare(b.color) || Number(availableOf(b) > 0) - Number(availableOf(a) > 0) || a.size.localeCompare(b.size, undefined, { numeric: true }))
+    .forEach(item => {
+      if (!colourways.some(entry => entry.colour.toLowerCase() === item.color.toLowerCase())) colourways.push({ id: item.id, colour: item.color });
+    });
   return <div className="content product-page">
-    <button className="back-link" onClick={() => navigate('/inventory')}>← Back to inventory</button>
-    <div className="product-page-head"><div><div className="eyebrow">Shop · Product detail</div><p className="product-breadcrumb">{product.category} / {product.brand}</p></div><span className="product-code">{product.sku}</span></div>
+    <div className="product-hero-bar">
+      <button className="hero-round" aria-label="Back to inventory" onClick={() => navigate('/inventory')}><ArrowLeft size={18}/></button>
+      <span className="hero-title">Details</span>
+      <button className={`hero-round ${isPinned(product.id) ? 'is-on' : ''}`} aria-pressed={isPinned(product.id)} aria-label={isPinned(product.id) ? 'Unpin this item' : 'Pin this item'} onClick={() => toggle(product.id)}><Bookmark size={17}/></button>
+    </div>
     <section className="product-showcase">
       <div className="product-gallery card"><div className="gallery-kicker">{product.color !== '—' ? product.color : 'Product view'}</div><div className="gallery-stage"><ProductPhoto product={product} size="hero" canManage={canManage} onSaved={refresh}/>{views.length > 1 && <div className="gallery-rail" role="group" aria-label="Other views">{views.map(view => <button key={view.id} type="button" className={`gallery-thumb ${view.id === product.id ? 'is-on' : ''}`} aria-current={view.id === product.id} onClick={() => navigate(`/inventory/${view.id}`)}><img src={view.photo} alt={`Size ${view.size}`} loading="lazy"/></button>)}</div>}</div><div className="gallery-caption"><span>HOMIES PROSHOP</span><span>{product.category}</span></div></div>
-      <div className="product-buy card"><div className="product-buy-brand">{product.brand}</div><h1>{product.name}</h1><p className="product-buy-subtitle">{product.size !== '—' ? `Size ${product.size}` : 'Size not captured'}{product.color !== '—' ? ` · ${product.color}` : ''}</p>{siblings.length > 1 && <div className="detail-sizes" role="group" aria-label="Other sizes of this product">{siblings.map(item => <button key={item.id} type="button" className={`pcard-size ${item.id === product.id ? 'is-on' : ''} ${item.qty === 0 ? 'is-empty' : ''}`} aria-current={item.id === product.id} onClick={() => navigate(`/inventory/${item.id}`)}>{item.size}</button>)}</div>}<div className="product-price">{formatPeso(product.price)}</div><div className="product-availability"><StatusBadge status={statusFor(product)}/><span>{available ? `${product.qty} available` : 'Currently unavailable'}</span></div><div className="product-spec-row"><span>SKU</span><strong>{product.sku}</strong></div><div className="product-spec-row"><span>Category</span><strong>{product.category}</strong></div>{canManage && <div className="product-buy-actions"><button className="button button-primary product-sale-button" disabled={!available} onClick={() => navigate('/pos')}><ShoppingBag size={17}/>{available ? 'Add to sale' : 'Out of stock'}</button><button className="button button-dark" onClick={() => document.querySelector('.product-management')?.scrollIntoView({ behavior: 'smooth' })}>Edit details</button></div>}<p className="product-note">Live stock is checked from the shop database. Reserved units are excluded from the available count.</p></div>
+      <div className="product-buy card"><div className="product-buy-top"><div><div className="product-buy-brand">{product.brand}</div><h1>{product.name}</h1></div>{canManage && <span className="cart-step product-qty" role="group" aria-label="Quantity to add"><button type="button" aria-label="One fewer" disabled={qty <= 1} onClick={() => setQty(value => Math.max(1, value - 1))}><Minus size={14}/></button><b>{String(qty).padStart(2, '0')}</b><button type="button" aria-label="One more" disabled={qty >= available} onClick={() => setQty(value => Math.min(available, value + 1))}><Plus size={14}/></button></span>}</div><p className="product-buy-subtitle">{product.size !== '—' ? `Size ${product.size}` : 'Size not captured'}{product.color !== '—' ? ` · ${product.color}` : ''}</p>{colourways.length > 1 && <><div className="product-buy-label">Colour</div><div className="colour-rail" role="group" aria-label="Other colours of this product">{colourways.map(entry => { const swatch = colourSwatch(entry.colour); const current = entry.colour.toLowerCase() === product.color.toLowerCase(); return <button key={entry.id} type="button" className={`colour-chip ${swatch ? 'is-dot' : ''} ${current ? 'is-on' : ''}`} aria-current={current} aria-label={entry.colour} title={entry.colour} onClick={() => navigate(`/inventory/${entry.id}`)}>{swatch ? <i style={{ background: swatch }}/> : entry.colour}</button>; })}</div></>}{siblings.length > 1 && <><div className="product-buy-label">Select size</div><div className="detail-sizes" role="group" aria-label="Other sizes of this product">{siblings.map(item => <button key={item.id} type="button" className={`pcard-size ${item.id === product.id ? 'is-on' : ''} ${availableOf(item) === 0 ? 'is-empty' : ''}`} aria-current={item.id === product.id} onClick={() => navigate(`/inventory/${item.id}`)}>{item.size}</button>)}</div></>}<div className="product-price">{formatPeso(product.price)}</div><div className="product-availability"><StatusBadge status={statusFor(product)}/><span>{available ? `${available} available` : 'Currently unavailable'}</span></div><div className="product-spec-row"><span>SKU</span><strong>{product.sku}</strong></div><div className="product-spec-row"><span>Category</span><strong>{product.category}</strong></div>{canManage && <div className="product-buy-actions"><button className="button button-primary product-sale-button" disabled={!available || !product.isActive || product.price === null} onClick={() => { add(product, qty); openCart(); }}><ShoppingBag size={17}/>{available && product.price !== null && product.isActive ? 'Add to sale' : 'Out of stock'}</button><button className="button button-dark" onClick={() => document.querySelector('.product-management')?.scrollIntoView({ behavior: 'smooth' })}>Edit details</button></div>}<p className="product-note">Live stock is checked from the shop database. Reserved units are excluded from the available count.</p></div>
     </section>
     <div className="detail-grid"><Card title="Item overview" meta={product.category}><div className="detail-fields">{([['SKU', product.sku], ['Size', product.size], ['Color', product.color], ['Supplier', product.supplier], ...(product.received ? [['Date received', product.received]] : [])] as string[][]).map(([label, value]) => <div key={label}><span>{label}</span><FieldValue value={value}/></div>)}</div></Card><Card title="Stock & pricing" meta="PHP"><div className="big-stock"><span>Current stock</span><strong>{product.qty}</strong><StatusBadge status={statusFor(product)}/></div><div className="detail-fields two">{([['Selling price', formatPeso(product.price)], ...(product.cost === null ? [] : [['Unit cost', formatPeso(product.cost)], ['Unit margin', formatPeso(marginFor(product))]]), ['Inventory value', formatPeso(product.qty * (product.price || 0))], ['Units sold', String(product.sold)]] as string[][]).map(([label, value]) => <div key={label}><span>{label}</span><FieldValue value={value}/></div>)}</div></Card></div>
     {canManage && <><StockPanel product={product} onSaved={refresh}/>{addingSize
@@ -612,10 +636,11 @@ function Pos({ embedded = false }: { embedded?: boolean }) {
   // sale had even started.
   const search = query.trim();
   const matches = search ? products.filter(product => product.isActive && availableOf(product) > 0 && product.price !== null && `${product.name} ${product.sku}`.toLowerCase().includes(search.toLowerCase())).slice(0, 12) : [];
-  const total = Math.max(0, subtotal - orderDiscount);
+  const cartIssues = cart.map(line => cartLineIssue(line, products.find(item => item.id === line.productId))).filter(Boolean);
+  const total = Number.isFinite(orderDiscount) ? Math.max(0, subtotal - Math.max(0, Math.min(orderDiscount, subtotal))) : 0;
   const amountPaidValue = amountPaid.trim() === '' ? total : Number(amountPaid);
-  async function complete() { setMessage(''); if (!cart.length) { setMessage('Add at least one product.'); return; } if (!Number.isFinite(amountPaidValue) || amountPaidValue < 0 || amountPaidValue > total) { setMessage('Amount received must be between ₱0 and the sale total.'); return; } try { const saleId = await shopRepository.completeSale(cart, orderDiscount, paymentMethod, customerName.trim() || null, amountPaidValue, sellerName.trim() || null); clear(); setOrderDiscount(0); setCustomerName(''); setSellerName(''); setAmountPaid(''); await refresh(); navigate(`/sales/${saleId}`); } catch (error) { setMessage(error instanceof Error ? error.message : 'Sale failed.'); } }
-  return <div className={embedded ? 'pos-workspace-panel' : 'content'}>{!embedded && <PageHead eyebrow="Counter POS" title="Ring up a sale" copy="Availability is checked again inside the database transaction."/>}<div className="pos-layout"><Card title="Find products" meta={search ? `${matches.length} match${matches.length === 1 ? '' : 'es'}` : 'In stock and priced'}><div className="search"><Search size={17}/><input aria-label="Search products" placeholder="Search product or SKU…" value={query} onChange={event => setQuery(event.target.value)}/>{search && <button className="search-clear" aria-label="Clear search" onClick={() => setQuery('')}><X size={16}/></button>}</div>{search ? (matches.length ? <div className="pos-results">{matches.map(product => <button key={product.id} onClick={() => add(product)}><span><strong>{sizedName(product.name, product.size)}</strong><small>{product.sku} · {availableOf(product)} available{product.reservedQty ? ` · ${product.reservedQty} reserved` : ''}</small></span><b>{formatPeso(product.price)}</b></button>)}</div> : <p className="empty-copy">No available product matches that.</p>) : <p className="empty-copy">Search by product name or SKU to add a line.</p>}</Card><Card title="Current sale" meta={`${cart.length} lines`}><div className="cart-lines">{cart.map(line => { const product = products.find(item => item.id === line.productId); if (!product) return <div key={line.productId}><span><strong>Item no longer in the catalogue</strong><small>{line.productId.slice(0, 8)}</small></span><b>{formatPeso(lineTotal(line))}</b><button className="icon-button" aria-label="Remove item no longer in the catalogue" onClick={() => remove(line.productId)}><X size={15}/></button></div>; return <div key={line.productId}><span><strong>{sizedName(product.name, product.size)}</strong><small>{product.sku} · {availableOf(product)} available{product.reservedQty ? ` · ${product.reservedQty} reserved` : ''}</small></span><label>Qty<input type="number" min="0" max={availableOf(product)} step="1" value={line.qty} onChange={event => setQty(line.productId, Number(event.target.value))}/></label><label>Line discount<input type="number" min="0" step="0.01" value={line.discount} onChange={event => setDiscount(line.productId, Number(event.target.value))}/></label><b>{formatPeso(lineTotal(line))}</b></div>; })}</div>{!cart.length && <p className="empty-copy">No products added.</p>}<div className="pos-checkout"><label>Customer name <em>optional</em><input placeholder="Walk-in" value={customerName} onChange={event => setCustomerName(event.target.value)}/></label><label>Seller name <em>optional</em><input placeholder="Who sold the item?" value={sellerName} onChange={event => setSellerName(event.target.value)}/></label><label>Order discount<input type="number" min="0" max={subtotal} step="0.01" value={orderDiscount} onChange={event => setOrderDiscount(Number(event.target.value))}/></label><label>Payment method<select value={paymentMethod} onChange={event => setPaymentMethod(event.target.value)}><option>Cash</option><option>GCash</option><option>Card</option><option>Bank transfer</option><option>Other</option></select></label><label>Amount received <em>leave blank for full payment</em><input type="number" min="0" max={total} step="0.01" placeholder={total ? String(total) : '0'} value={amountPaid} onChange={event => setAmountPaid(event.target.value)}/></label><div><span>Balance due</span><strong>{formatPeso(Math.max(0, total - amountPaidValue))}</strong></div><button className="button button-primary" onClick={() => void complete()}>Complete sale</button>{message && <p className="form-error" role="alert">{message}</p>}</div></Card></div></div>;
+  async function complete() { setMessage(''); if (!cart.length) { setMessage('Add at least one product.'); return; } if (cartIssues.length) { setMessage('Resolve or remove every flagged cart line before completing the sale.'); return; } if (!Number.isFinite(orderDiscount) || orderDiscount < 0 || orderDiscount > subtotal) { setMessage('Order discount must be between ₱0 and the subtotal.'); return; } if (!Number.isFinite(amountPaidValue) || amountPaidValue < 0 || amountPaidValue > total) { setMessage('Amount received must be between ₱0 and the sale total.'); return; } try { const saleId = await shopRepository.completeSale(cart, orderDiscount, paymentMethod, customerName.trim() || null, amountPaidValue, sellerName.trim() || null); clear(); setOrderDiscount(0); setCustomerName(''); setSellerName(''); setAmountPaid(''); await refresh(); navigate(`/sales/${saleId}`); } catch (error) { setMessage(error instanceof Error ? error.message : 'Sale failed.'); } }
+  return <div className={embedded ? 'pos-workspace-panel' : 'content'}>{!embedded && <PageHead eyebrow="Counter POS" title="Ring up a sale" copy="Availability is checked again inside the database transaction."/>}<div className="pos-layout"><Card title="Find products" meta={search ? `${matches.length} match${matches.length === 1 ? '' : 'es'}` : 'In stock and priced'}><div className="search"><Search size={17}/><input aria-label="Search products" placeholder="Search product or SKU…" value={query} onChange={event => setQuery(event.target.value)}/>{search && <button className="search-clear" aria-label="Clear search" onClick={() => setQuery('')}><X size={16}/></button>}</div>{search ? (matches.length ? <div className="pos-results">{matches.map(product => <button key={product.id} onClick={() => add(product)}><span><strong>{sizedName(product.name, product.size)}</strong><small>{product.sku} · {availableOf(product)} available{product.reservedQty ? ` · ${product.reservedQty} reserved` : ''}</small></span><b>{formatPeso(product.price)}</b></button>)}</div> : <p className="empty-copy">No available product matches that.</p>) : <p className="empty-copy">Search by product name or SKU to add a line.</p>}</Card><Card title="Current sale" meta={`${cart.length} lines`}><div className="cart-lines">{cart.map(line => { const product = products.find(item => item.id === line.productId); if (!product) return <div key={line.productId}><span><strong>Item no longer in the catalogue</strong><small>{line.productId.slice(0, 8)}</small></span><b>{formatPeso(lineTotal(line))}</b><button className="icon-button" aria-label="Remove item no longer in the catalogue" onClick={() => remove(line.productId)}><X size={15}/></button></div>; return <div key={line.productId}><span><strong>{sizedName(product.name, product.size)}</strong><small>{product.sku} · {availableOf(product)} available{product.reservedQty ? ` · ${product.reservedQty} reserved` : ''}</small></span><label>Qty<input type="number" min="0" max={availableOf(product)} step="1" value={line.qty} onChange={event => setQty(line.productId, Number(event.target.value))}/></label><label>Line discount<input type="number" min="0" step="0.01" value={line.discount} onChange={event => setDiscount(line.productId, Number(event.target.value))}/></label><b>{formatPeso(lineTotal(line))}</b></div>; })}</div>{!cart.length && <p className="empty-copy">No products added.</p>}<div className="pos-checkout"><label>Customer name <em>optional</em><input placeholder="Walk-in" value={customerName} onChange={event => setCustomerName(event.target.value)}/></label><label>Seller name <em>optional</em><input placeholder="Who sold the item?" value={sellerName} onChange={event => setSellerName(event.target.value)}/></label><label>Order discount<input type="number" min="0" max={subtotal} step="0.01" value={orderDiscount} onChange={event => setOrderDiscount(Number(event.target.value))}/></label><label>Payment method<select value={paymentMethod} onChange={event => setPaymentMethod(event.target.value)}><option>Cash</option><option>GCash</option><option>Card</option><option>Bank transfer</option><option>Other</option></select></label><label>Amount received <em>leave blank for full payment</em><input type="number" min="0" max={total} step="0.01" placeholder={total ? String(total) : '0'} value={amountPaid} onChange={event => setAmountPaid(event.target.value)}/></label><div><span>Balance due</span><strong>{formatPeso(Math.max(0, total - amountPaidValue))}</strong></div>{cartIssues.length > 0 && <p className="form-error" role="alert">Resolve or remove every flagged cart line before completing the sale.</p>}<button className="button button-primary" disabled={!cart.length || cartIssues.length > 0} onClick={() => void complete()}>Complete sale</button>{message && <p className="form-error" role="alert">{message}</p>}</div></Card></div></div>;
 }
 
 const NOTE_KEY = 'homies-proshop-notes';

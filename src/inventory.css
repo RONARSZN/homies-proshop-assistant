@@ -351,6 +351,27 @@
 }
 .detail-sizes .pcard-size { min-height: 40px; }
 
+.product-hero-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.hero-title { font: 500 12px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.hero-round { width: 42px; height: 42px; display: grid; place-items: center; border: 1px solid var(--line-2); border-radius: var(--r-pill); background: var(--surface); color: var(--ink); }
+.hero-round:hover { border-color: var(--red); color: var(--red); }
+.hero-round.is-on { border-color: var(--red); background: var(--red); color: var(--paper); }
+.product-buy-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.product-buy-top h1 { margin-bottom: 0; }
+.product-buy .cart-step button { border-color: var(--ink-line); background: rgba(255, 255, 255, 0.08); color: var(--paper); }
+.product-buy .cart-step b { color: var(--paper); }
+.product-buy-label { margin-top: 22px; color: var(--on-ink-3); font: 500 10px var(--mono); letter-spacing: 0.12em; text-transform: uppercase; }
+.product-buy .detail-sizes { margin-top: 8px; }
+.product-buy .pcard-size { border-color: var(--ink-line); background: rgba(255, 255, 255, 0.06); color: var(--on-ink-2); }
+.product-buy .pcard-size.is-on { border-color: var(--paper); background: var(--paper); color: var(--ink); }
+.product-buy .pcard-size.is-empty:not(.is-on) { color: var(--on-ink-3); }
+.colour-rail { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.colour-chip { min-height: 34px; padding: 0 12px; border: 1px solid var(--ink-line); border-radius: var(--r-pill); background: rgba(255, 255, 255, 0.06); color: var(--on-ink-2); font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
+.colour-chip.is-dot { width: 34px; padding: 0; display: grid; place-items: center; }
+.colour-chip.is-dot i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--on-ink-3); display: block; }
+.colour-chip.is-on { border-color: var(--paper); border-width: 2px; }
+.colour-chip:not(.is-dot).is-on { background: var(--paper); color: var(--ink); }
+
 /* Thumbnail rail. Sits over the hero on wide screens the way the reference
    does, and drops below it on phones where there is no room beside. */
 .gallery-stage { position: relative; }
@@ -375,6 +396,11 @@
 .gallery-thumb.is-on { border-color: var(--red); border-width: 2px; }
 
 @media (max-width: 860px) {
+  .product-showcase { gap: 0; }
+  .product-buy { position: relative; z-index: 1; margin-top: -18px; border-radius: var(--r-card); padding-top: 22px; }
+  .product-buy::before { content: ''; position: absolute; top: 9px; left: 50%; width: 42px; height: 3px; transform: translateX(-50%); border-radius: var(--r-pill); background: var(--on-ink-3); }
+  .product-buy-top { align-items: center; }
+
   .gallery-rail {
     position: static;
     flex-direction: row;

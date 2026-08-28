@@ -55,6 +55,17 @@ describe('CartProvider', () => {
     expect(screen.getByTestId('count').textContent).toBe('0');
   });
 
+  it('rejects persisted lines with invalid quantities or discounts', () => {
+    window.localStorage.setItem('homies.cart', JSON.stringify([
+      { productId: 'bad-qty', qty: 0, unitPrice: 200, discount: 0 },
+      { productId: 'bad-discount', qty: 1, unitPrice: 200, discount: Number.NaN },
+      { productId: 'valid', qty: 1, unitPrice: 200, discount: 0 },
+    ]));
+    mount();
+    expect(cart.count).toBe(1);
+    expect(cart.lines[0].productId).toBe('valid');
+  });
+
   it('opens and closes the sheet', () => {
     mount();
     expect(cart.open).toBe(false);

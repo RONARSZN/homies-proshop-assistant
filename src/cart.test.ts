@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addLine, availableOf, cartCount, cartSubtotal, lineTotal, removeLine, setLineDiscount, setLineQty } from './cart';
+import { addLine, availableOf, cartCount, cartLineIssue, cartSubtotal, lineTotal, removeLine, setLineDiscount, setLineQty } from './cart';
 import type { CartLine, Product } from './types';
 
 const product = (over: Partial<Product> = {}): Product => ({
@@ -42,6 +42,9 @@ describe('addLine', () => {
   it('ignores a request to add negative quantity', () => {
     expect(addLine([], product(), -5)).toEqual([]);
   });
+  it('ignores a fractional quantity', () => {
+    expect(addLine([], product(), 1.5)).toEqual([]);
+  });
 });
 
 describe('setLineQty', () => {
@@ -54,6 +57,9 @@ describe('setLineQty', () => {
   });
   it('drops the line on a negative quantity rather than storing one', () => {
     expect(setLineQty(lines, 'p1', -2)).toEqual([]);
+  });
+  it('drops the line on a fractional quantity', () => {
+    expect(setLineQty(lines, 'p1', 1.5)).toEqual([]);
   });
 });
 
@@ -99,4 +105,16 @@ describe('removeLine', () => {
     ];
     expect(removeLine(lines, 'p1').map(line => line.productId)).toEqual(['p2']);
   });
+});
+
+describe('cartLineIssue', () => {
+  const line: CartLine = { productId: 'p1', qty: 2, unitPrice: 200, discount: 0 };
+  it('flags missing products', () => expect(cartLineIssue(line, undefined)).toBe('missing'));
+  it('flags inactive, unpriced and insufficient products', () => {
+    expect(cartLineIssue(line, product({ isActive: false }))).toBe('inactive');
+    expect(cartLineIssue(line, product({ price: null }))).toBe('unpriced');
+    expect(cartLineIssue(line, product({ qty: 2, reservedQty: 1 }))).toBe('insufficient-stock');
+  });
+  it('flags a changed price', () => expect(cartLineIssue(line, product({ price: 250 }))).toBe('price-changed'));
+  it('accepts a current sellable line', () => expect(cartLineIssue(line, product())).toBeNull());
 });

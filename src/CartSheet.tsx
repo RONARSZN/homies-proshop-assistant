@@ -3,7 +3,7 @@ import Minus from 'lucide-react/dist/esm/icons/minus.mjs';
 import Package from 'lucide-react/dist/esm/icons/package.mjs';
 import Plus from 'lucide-react/dist/esm/icons/plus.mjs';
 import X from 'lucide-react/dist/esm/icons/x.mjs';
-import { availableOf, lineTotal } from './cart';
+import { availableOf, cartLineIssue, lineTotal } from './cart';
 import { formatPeso } from './domain';
 import { catalogPhoto } from './productPhotos';
 import { useCart } from './useCart';
@@ -26,6 +26,8 @@ export function CartSheet({ onCheckout }: { onCheckout: () => void }) {
   }, [closeCart]);
   if (!open) return null;
   const discount = lines.reduce((sum, line) => sum + line.discount, 0);
+  const issues = lines.map(line => cartLineIssue(line, products.find(item => item.id === line.productId))).filter(Boolean);
+  const issueText = (issue: ReturnType<typeof cartLineIssue>) => issue === 'missing' ? 'Item no longer in the catalogue.' : issue === 'inactive' ? 'Product is inactive.' : issue === 'unpriced' ? 'Product has no selling price.' : issue === 'price-changed' ? 'Price changed. Remove and add the current item.' : issue === 'insufficient-stock' ? 'Not enough available stock.' : 'Cart line data is invalid.';
   return <div className="sheet-backdrop" onClick={closeCart}>
     <div className="sheet cart-sheet" role="dialog" aria-modal="true" aria-label="Current sale" onClick={event => event.stopPropagation()}>
       <div className="sheet-head">
@@ -38,18 +40,19 @@ export function CartSheet({ onCheckout }: { onCheckout: () => void }) {
         : <div className="cart-lines-sheet">{lines.map(line => {
             const product = products.find(item => item.id === line.productId);
             if (!product) return <div className="cart-line is-missing" key={line.productId}>
-              <span className="cart-line-name"><strong>Item no longer in the catalogue</strong><small>{line.productId.slice(0, 8)}</small></span>
+              <span className="cart-line-name"><strong>Item no longer in the catalogue</strong><small>{line.productId.slice(0, 8)}</small><em className="cart-line-warn">Remove this line before checkout.</em></span>
               <button className="cart-line-remove" aria-label="Remove missing item" onClick={() => remove(line.productId)}><X size={15}/></button>
             </div>;
             const photo = product.imageUrl || catalogPhoto(product);
             const available = availableOf(product);
+            const issue = cartLineIssue(line, product);
             return <div className="cart-line" key={line.productId}>
               {/* Decorative: the product name sits beside it. */}
               {photo ? <img className="cart-line-photo" src={photo} alt=""/> : <span className="cart-line-photo empty" aria-hidden="true"><Package size={16}/></span>}
               <span className="cart-line-name">
                 <strong>{product.name}</strong>
                 <small>{[product.size !== '—' ? `Size ${product.size}` : null, product.color !== '—' ? product.color : null, product.sku].filter(Boolean).join(' · ')}</small>
-                {line.qty > available && <em className="cart-line-warn">Only {available} available</em>}
+                {issue && <em className="cart-line-warn">{issueText(issue)}{issue === 'insufficient-stock' ? ` Only ${available} available.` : ''}</em>}
               </span>
               <span className="cart-step" role="group" aria-label={`Quantity of ${product.name}`}>
                 <button type="button" aria-label="One fewer" onClick={() => setQty(line.productId, line.qty - 1)}><Minus size={14}/></button>
@@ -66,7 +69,8 @@ export function CartSheet({ onCheckout }: { onCheckout: () => void }) {
         <div><span>Line discounts</span><strong>{discount ? `−${formatPeso(discount)}` : formatPeso(0)}</strong></div>
         <div className="is-total"><span>Total</span><strong>{formatPeso(subtotal)}</strong></div>
       </div>
-      <button className="button button-primary cart-checkout" disabled={!lines.length} onClick={() => { closeCart(); onCheckout(); }}>
+      {issues.length > 0 && <p className="form-error" role="alert">Resolve or remove every flagged line before checkout.</p>}
+      <button className="button button-primary cart-checkout" disabled={!lines.length || issues.length > 0} onClick={() => { closeCart(); onCheckout(); }}>
         Go to checkout
       </button>
       <p className="cart-note">Customer, seller, payment method and amount received are captured at the counter before the sale is completed.</p>

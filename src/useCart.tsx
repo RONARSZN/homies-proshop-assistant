@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { addLine, cartCount, cartSubtotal, removeLine, setLineDiscount, setLineQty } from './cart';
+import { addLine, cartCount, cartSubtotal, isValidCartLine, removeLine, setLineDiscount, setLineQty } from './cart';
 import type { CartLine, Product } from './types';
 
 const STORAGE_KEY = 'homies.cart';
@@ -14,11 +14,7 @@ function readStored(): CartLine[] {
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((line: unknown): line is CartLine =>
-      !!line && typeof line === 'object'
-      && typeof (line as CartLine).productId === 'string'
-      && Number.isFinite((line as CartLine).qty)
-      && Number.isFinite((line as CartLine).unitPrice));
+    return parsed.filter(isValidCartLine);
   } catch {
     return [];
   }
