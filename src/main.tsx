@@ -4,6 +4,7 @@ import { App } from './App';
 import { ErrorBoundary } from './ErrorBoundary';
 import { InstallPrompt } from './InstallPrompt';
 import { UpdateBanner } from './UpdateBanner';
+import { CartProvider } from './useCart';
 import './styles.css';
 /* After styles.css on purpose. The inventory sheet overrides shared rules
    (.product-group-grid columns, the pinned .product-buy-actions bar) at equal
@@ -16,7 +17,9 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <InstallPrompt />
       <UpdateBanner />
-      <App />
+      <CartProvider>
+        <App />
+      </CartProvider>
     </ErrorBoundary>
   </StrictMode>,
 );
