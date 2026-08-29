@@ -1,17 +1,15 @@
 import type { Period, Product, RangeKey, Sale } from './types';
 export type { Period, RangeKey } from './types';
 
-export type Status = 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Slow Moving' | 'Data Missing';
+export type Status = 'In Stock' | 'Low Stock' | 'Out of Stock' | 'Slow Moving';
 
 export const formatPeso = (value: number | null | undefined) => value === null || value === undefined ? '—' : `₱${Math.round(value).toLocaleString('en-PH')}`;
-export const statusFor = (product: Product): Status => {
-  const source = (product.sourceStatus || '').toLowerCase();
-  if (source.includes('out of stock')) return 'Out of Stock';
-  if (source.includes('restock') || source.includes('low stock')) return 'Low Stock';
-  if (source.includes('slow')) return 'Slow Moving';
-  if (source.includes('missing')) return 'Data Missing';
-  return product.qty === 0 ? 'Out of Stock' : product.qty <= 2 ? 'Low Stock' : product.sold < 5 ? 'Slow Moving' : 'In Stock';
-};
+/* Derived purely from the ledger. This used to prefer a `sourceStatus` string
+   carried over from the imported sheet, but the repository never populated it,
+   so those branches could not run and 'Data Missing' could not be produced.
+   On-hand is the authority. */
+export const statusFor = (product: Product): Status =>
+  product.qty === 0 ? 'Out of Stock' : product.qty <= 2 ? 'Low Stock' : product.sold < 5 ? 'Slow Moving' : 'In Stock';
 export const marginFor = (product: Product) => product.cost === null || product.cost === 0 || product.price === null ? null : product.price - product.cost;
 export const saleTotal = (sale: Sale) => sale.total;
 

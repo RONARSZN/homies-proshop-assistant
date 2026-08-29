@@ -28,7 +28,6 @@ export type Product = {
   imagePath: string | null;
   /** Short-lived signed URL for imagePath, resolved on load. Null when absent. */
   imageUrl: string | null;
-  sourceStatus?: string;
   isActive: boolean;
 };
 

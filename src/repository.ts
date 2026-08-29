@@ -349,26 +349,17 @@ export const shopRepository: ShopRepository = {
     });
   },
 
-  // A live allocation writes the ledger entry first, then records the
-  // allocation against it. Historical rows carry no movement and are never
-  // created here — they only ever arrive through the seed migration.
+  // One transactional RPC, like every other write of this weight. Doing it as
+  // separate ledger and allocation inserts meant a failure on the second left
+  // stock debited with no record of who took the gear. Historical rows carry
+  // no movement and are never created here — they only ever arrive through the
+  // seed migration.
   async allocateToRider(riderId, productId, qty, note) {
-    const product = await supabase.from('products').select('sku').eq('id', productId).single();
-    fail('Product could not be read', product.error);
-    const movement = await supabase.from('stock_movements')
-      .insert({ product_id: productId, delta: -Math.abs(qty), reason: 'allocation', note })
-      .select('id')
-      .single();
-    fail('Stock could not be adjusted for this allocation', movement.error);
-    const { error } = await supabase.from('rider_allocations').insert({
-      rider_id: riderId,
-      product_id: productId,
-      item_code: product.data?.sku || '',
-      qty: Math.abs(qty),
-      allocated_at: new Date().toISOString().slice(0, 10),
-      note,
-      is_historical: false,
-      movement_id: movement.data?.id,
+    const { error } = await supabase.rpc('allocate_to_rider', {
+      p_rider_id: riderId,
+      p_product_id: productId,
+      p_qty: Math.abs(qty),
+      p_note: note,
     });
     fail('Gear could not be allocated', error);
   },
