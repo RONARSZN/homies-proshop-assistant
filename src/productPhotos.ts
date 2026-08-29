@@ -36,7 +36,7 @@ const CATALOG: ReadonlyArray<readonly [string, string]> = [
   ['2024 CHILV PRO', 'boards_10'],
   ['2023 SAPPAROD PRO', 'boards_11'],
   ['2023 CHILV PRO', 'boards_12'],
-  ['2022 SDR PRO', 'boards_13'],
+  ['2022 SDR LTD', 'boards_13'],
   // Boots
   ['2026 PROGRAM', 'boots'],
   ['2026 FIGMENT MOJITO', 'boots_2'],
