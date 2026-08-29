@@ -542,13 +542,27 @@ function StockPanel({ product, onSaved }: { product: Product; onSaved: () => Pro
 function ProductEditor({ product, categories, onSaved }: { product: Product; categories: Category[]; onSaved: () => Promise<void> }) {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
+  const [photoBusy, setPhotoBusy] = useState(false);
+
+  /* Removing the uploaded shot does not leave the product blank: the line
+     sheet tile takes over again where there is one, which is the state the
+     product was in before anyone photographed it. */
+  async function clearPhoto() {
+    if (!product.imagePath) return;
+    setPhotoBusy(true); setMessage('');
+    try { await shopRepository.removeProductPhoto(product.id, product.imagePath); setMessage('Photo removed.'); await onSaved(); }
+    catch (error) { setMessage(error instanceof Error ? error.message : 'Photo could not be removed.'); }
+    finally { setPhotoBusy(false); }
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const number = (name: string) => { const value = String(form.get(name) || '').trim(); return value ? Number(value) : null; };
     try { await shopRepository.updateProduct(product.id, { sku: String(form.get('sku')), name: String(form.get('name')), categoryId: String(form.get('category')), brand: String(form.get('brand')).trim() || null, size: String(form.get('size')).trim() || null, color: String(form.get('color')).trim() || null, cost: number('cost'), price: number('price'), supplier: String(form.get('supplier')).trim() || null, received: String(form.get('received')).trim() || null, isActive: form.get('active') === 'on' }); setMessage('Product updated.'); await onSaved(); } catch (error) { setMessage(error instanceof Error ? error.message : 'Product update failed.'); }
   }
-  return <Card title="Product management" meta="Admin" wide><button className="button button-dark" onClick={() => setOpen(value => !value)}>{open ? 'Close editor' : 'Edit product'}</button>{open && <form className="product-form" onSubmit={submit}><label>SKU<input name="sku" defaultValue={product.sku} required/></label><label>Name<input name="name" defaultValue={product.name} required/></label><label>Category<select name="category" defaultValue={product.categoryId}>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Brand<input name="brand" defaultValue={product.brand === '—' ? '' : product.brand}/></label><label>Size<input name="size" defaultValue={product.size === '—' ? '' : product.size}/></label><label>Colour<input name="color" defaultValue={product.color === '—' ? '' : product.color}/></label><label>Unit cost<input name="cost" type="number" min="0.01" step="0.01" defaultValue={product.cost ?? ''}/></label><label>Selling price<input name="price" type="number" min="0.01" step="0.01" defaultValue={product.price ?? ''}/></label><label>Supplier<input name="supplier" defaultValue={product.supplier === '—' ? '' : product.supplier}/></label><label>Date received<input name="received" type="date" defaultValue={product.received}/></label><label className="checkbox"><input name="active" type="checkbox" defaultChecked={product.isActive}/>Active product</label><button className="button button-primary">Save product</button></form>}{message && <p className="form-message">{message}</p>}</Card>;
+  return <Card title="Product management" meta="Admin" wide><button className="button button-dark" onClick={() => setOpen(value => !value)}>{open ? 'Close editor' : 'Edit product'}</button>{open && <form className="product-form" onSubmit={submit}><label>SKU<input name="sku" defaultValue={product.sku} required/></label><label>Name<input name="name" defaultValue={product.name} required/></label><label>Category<select name="category" defaultValue={product.categoryId}>{categories.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label>Brand<input name="brand" defaultValue={product.brand === '—' ? '' : product.brand}/></label><label>Size<input name="size" defaultValue={product.size === '—' ? '' : product.size}/></label><label>Colour<input name="color" defaultValue={product.color === '—' ? '' : product.color}/></label><label>Unit cost<input name="cost" type="number" min="0.01" step="0.01" defaultValue={product.cost ?? ''}/></label><label>Selling price<input name="price" type="number" min="0.01" step="0.01" defaultValue={product.price ?? ''}/></label><label>Supplier<input name="supplier" defaultValue={product.supplier === '—' ? '' : product.supplier}/></label><label>Date received<input name="received" type="date" defaultValue={product.received}/></label><label className="checkbox"><input name="active" type="checkbox" defaultChecked={product.isActive}/>Active product</label><div className="product-form-photo"><span>Product photo</span>{product.imagePath
+      ? <><span className="product-form-photo-tile">{product.imageUrl ? <img src={product.imageUrl} alt={`Current photo of ${product.name}`}/> : <b>Photo on file</b>}</span><button type="button" className="button button-dark" disabled={photoBusy} onClick={() => void clearPhoto()}>{photoBusy ? 'Removing…' : 'Remove photo'}</button></>
+      : <p>No uploaded photo{catalogPhoto(product) ? ', so the line sheet tile is standing in' : ''}. Use the photo tile at the top of this page to add one.</p>}</div><button className="button button-primary">Save product</button></form>}{message && <p className="form-message">{message}</p>}</Card>;
 }
 
 function SalesWorkspace() {

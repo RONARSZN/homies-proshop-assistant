@@ -518,6 +518,15 @@ button { cursor: pointer; }
 .product-form .checkbox { grid-template-columns: auto 1fr; align-items: center; gap: 10px; }
 .product-form .checkbox input { min-height: 0; width: 20px; height: 20px; }
 .product-form .form-actions, .product-form > .button { grid-column: 1 / -1; }
+.product-form .product-form-photo { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line-2); border-radius: var(--r-tile); background: var(--surface-2); }
+.product-form-photo > span { font-size: 12px; font-weight: 600; color: var(--ink-2); flex: 1 1 100%; }
+.product-form-photo p { margin: 0; font-size: 13px; color: var(--muted); }
+.product-form-photo .button { margin-left: auto; }
+.product-form-photo-tile {
+  display: grid; place-items: center; width: 56px; height: 56px; overflow: hidden;
+  border-radius: var(--r-tile); background: var(--surface); font-size: 11px; color: var(--muted); text-align: center;
+}
+.product-form-photo-tile img { width: 100%; height: 100%; object-fit: cover; }
 .form-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .form-error, .form-message { font-size: 13px; margin: 14px 0 0; }
 .form-error { color: var(--red-ink); font-weight: 600; }
