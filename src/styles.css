@@ -416,9 +416,22 @@ button { cursor: pointer; }
 .photo-drop:hover .product-photo.empty { border-color: var(--muted); color: var(--ink-2); }
 .photo-control input:focus-visible + .photo-drop .product-photo,
 .photo-drop:focus-visible .product-photo { outline: 2px solid var(--red); outline-offset: 2px; }
-.photo-remove { min-height: 44px; padding: 0 12px; border: 0; border-radius: var(--r-pill); background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; }
-.photo-remove:hover:not(:disabled) { color: var(--red); }
-.photo-remove:disabled { opacity: 0.55; cursor: default; }
+
+/* Delete badge, sat on the top-right corner of the tile. The visible chip is
+   26px so it does not swallow the photo; the ::after pad takes the touch
+   target out to 44px for a thumb at the counter. */
+.photo-frame { position: relative; display: inline-block; }
+.photo-x {
+  position: absolute; top: -7px; right: -7px; z-index: 1;
+  display: grid; place-items: center; width: 26px; height: 26px; padding: 0;
+  border: 1px solid var(--line-2); border-radius: 50%;
+  background: var(--surface); color: var(--ink-2); cursor: pointer;
+  box-shadow: 0 1px 3px rgb(16 17 16 / 0.22);
+}
+.photo-x::after { content: ''; position: absolute; inset: -9px; border-radius: 50%; }
+.photo-x:hover:not(:disabled) { background: var(--red); border-color: var(--red); color: var(--surface); }
+.photo-x:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.photo-x:disabled { opacity: 0.55; cursor: default; }
 .photo-busy { font: 400 12px var(--mono); color: var(--muted); }
 
 .variant-control { display: grid; gap: 7px; margin-bottom: 14px; }

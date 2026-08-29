@@ -221,13 +221,19 @@ function ProductPhoto({ product, size, canManage, onSaved }: { product: Product;
 
   if (!canManage) return photo ? tile : <span className={`product-photo ${size} empty`} role="img" aria-label="No photo captured"><Camera size={size === 'hero' ? 21 : 16}/>{size === 'hero' && <b>No photo</b>}</span>;
 
+  /* The delete badge is a sibling of the label, never a child of it: a control
+     nested inside the file-picker label would open the camera on the same tap
+     that removes the photo. It only appears once there is an uploaded shot,
+     because there is nothing to delete on a line sheet tile. */
   return <div className={`photo-control ${size}`}>
-    <label htmlFor={inputId} className="photo-drop">
-      {tile}
-      <span className="sr-only">{product.imageUrl ? `Replace photo for ${product.name}` : `Add photo for ${product.name}`}</span>
-    </label>
+    <div className="photo-frame">
+      <label htmlFor={inputId} className="photo-drop">
+        {tile}
+        <span className="sr-only">{product.imageUrl ? `Replace photo for ${product.name}` : `Add photo for ${product.name}`}</span>
+      </label>
+      {product.imagePath && <button type="button" className="photo-x" onClick={() => void clear()} disabled={busy} title="Delete photo" aria-label={`Delete the photo of ${product.name}`}><X size={13} strokeWidth={2.6}/></button>}
+    </div>
     <input id={inputId} className="sr-only" type="file" accept="image/*" capture="environment" disabled={busy} onChange={pick}/>
-    {size === 'hero' && product.imagePath && <button type="button" className="photo-remove" onClick={() => void clear()} disabled={busy}>Remove</button>}
     {busy && <span className="photo-busy">Saving…</span>}
     {message && <p className="form-error" role="alert">{message}</p>}
   </div>;
